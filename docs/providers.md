@@ -1,28 +1,28 @@
-# Playback-provider architecture for Shatsu
+# Shatsu provider architecture — v0.2.0 alpha
 
-The backend models a provider-neutral room timeline: `videoId`, `position`, `playing`, `updatedAt`, `revision`. The current implementation is **YouTube-only** and uses official visible IFrame embeds.
+Room timelines are **host-authoritative**: `{ provider, trackId, videoId, title, playing, position, updatedAt, revision }`. The server never receives music credentials, audio bytes or OAuth tokens. Each participant independently loads the supported track on the selected provider.
 
-## YouTube / YouTube Music links (implemented)
+## YouTube and YouTube Music — web
 
-Paste a `youtube.com/watch?v=...`, `youtu.be/...`, or `music.youtube.com/watch?v=...` URL. Shatsu extracts the 11-character video ID and loads it with the YouTube IFrame Player API on each participant's device. A YouTube Music link is **not** a control session in the YouTube Music native app. Autoplay and embedded video availability are subject to platform and browser restrictions. No background audio, audio extraction, download, or ad bypass.
+Official visible IFrame playback with video IDs taken from `youtube.com` / `music.youtube.com` links. The host can control the group timeline, while each user's player makes its own network requests to YouTube. No native YouTube Music remote control, no audio extraction and no guaranteed background play.
 
-## Spotify Android App Remote (planned, unimplemented)
+## Spotify — web (alpha implementation, not device verified)
 
-1. Register Shatsu with Spotify for Developers and verify current development mode eligibility (Premium developer; authorized-user limits; provider approval for expanded distribution).
-2. Add Android Kotlin/Compose application with Spotify Auth + Android App Remote SDK, configured for the **user's own Spotify app**. Never embed or share Spotify credentials or secret keys in the app.
-3. Add `/api/rooms/:code` room transport to the Android client, using host-authoritative track URI, timeline and actions, and a `SpotifyAdapter` with supported methods `load(uri)`, `play()`, `pause()`, `seek(ms)`, `getState()`.
-4. Each listener signs into **their own** Spotify account and streams tracks from Spotify independently; never broadcast Spotify audio to friends.
-5. Resolve unavailable tracks, country restrictions, re-linking and playback-device differences, and test two simultaneous Premium accounts.
-6. Respect Spotify API/SDK terms. Development-mode access is not a general public release authorization.
+- Shatsu server exposes only a *public* Spotify client ID via `/api/config` (`SHATSU_SPOTIFY_CLIENT_ID`).
+- Each participant in Brave/another full browser authorizes via PKCE with exact root redirect URI registered in the Spotify dashboard.
+- Per-tab `sessionStorage` holds access/refresh tokens; browser calls Spotify's `GET /me/player`, `PUT /me/player/play`, `PUT /me/player/pause`, `PUT /me/player/seek` using the listener's token.
+- Each Spotify user needs an active device and usually Premium; developer apps are restricted by Spotify's eligibility/access policies.
+- Reconciliation checks are throttled to reduce excessive API usage. Playback may drift, fail due to unavailable tracks/devices or need user interaction. Spotify is not rebroadcast or recorded.
+- A Spotify URL in a room does not automatically find and queue its YouTube equivalent. Future cross-service mapping requires metadata, rights/region handling and a provider selection UI.
 
-## Apple Music (possible later)
+## Android companion
 
-Research current MusicKit capabilities and user authorization. Map tracks to provider-specific IDs, use ISRC and title/artist/duration as imperfect matching signals, allow a person to reject a mismatched recording.
+The Android app is native Java + Android WebView with a configurable Shatsu server URL, a Brave shortcut and GitHub Actions APK artifact. It does **not** embed Spotify credentials, does **not** use the Spotify App Remote SDK yet, and does **not** include the Node server. Spotify authorization is meant for Brave on Android, because PKCE state and verifier are specific to one browser profile. Future Android App Remote SDK work can enable native Spotify sessions, after supplying developer app details and testing device authentication.
 
-## Brave support
+## Future priorities
 
-Brave can open the same HTTPS Shatsu room web app. It does not provide an unrestricted API for controlling arbitrary Spotify or YouTube Music tabs. Do not attempt to inject scripts into native service pages or circumvent streaming provider restrictions.
-
-## Android direction
-
-The earliest Android experience is the installable web app in Brave. Native Android integration is separate and requires hosting Shatsu at a real HTTPS URL before generating a production app that binds to that endpoint. The source code is deliberately modular: the room protocol remains provider-neutral while playback implementations are platform-specific.
+1. Verify Spotify accounts and devices under current Spotify developer-mode restrictions, improve failures and queue metadata.
+2. Test two-device drift and Android WebView YouTube iframe playback; handle autoplay and connectivity interruptions.
+3. Persist rooms and tokens securely, implement rate limits, reconnect/ownership transfer and moderation.
+4. Add native Android Spotify App Remote SDK if API access and Spotify policy permit it.
+5. Add other lawful playback providers one at a time, and optional ISRC-based cross-service matching with user confirmation.

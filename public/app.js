@@ -1,3 +1,4 @@
+import { SpotifyController } from './spotify.js';
 // Shatsu 0.1.0: browser-side room client. No music files are proxied, downloaded or re-streamed.
 const $ = id => document.getElementById(id);
 const dom = {
@@ -9,7 +10,7 @@ const dom = {
   toggle: $('toggle-btn'), next: $('next-btn'), sync: $('sync-btn'), start: $('enable-audio'),
   seek: $('seek'), position: $('position'), duration: $('duration'), syncText: $('sync-text'),
   queue: $('queue-list'), queueCount: $('queue-count'), chat: $('messages'), chatForm: $('chat-form'), chatText: $('chat-text'),
-  leave: $('leave-btn'), toast: $('toast')
+  leave: $('leave-btn'), toast: $('toast'), spotifyCard: $('spotify-card'), spotifyLink: $('spotify-open'), spotifyConnect: $('spotify-connect'), spotifyStatus: $('spotify-status'), providerLabel: $('provider-label')
 };
 let mode = 'create', credentials = null, state = null, events = null;
 let player = null, playerReady = false, youtubeReady = false, playerVideo = null;
@@ -17,6 +18,7 @@ let userEnabledPlayback = false, suppressPlayerEventsUntil = 0;
 let serverOffset = 0, updateInterval = null, presenceInterval = null, clockInterval = null;
 let isDragging = false, toastTimeout = null, applying = false;
 const YT_PLAYING = 1, YT_PAUSED = 2, YT_ENDED = 0;
+const spotify = new SpotifyController(message => showToast(message));
 
 function showToast(message) {
   dom.toast.textContent = message;
@@ -64,6 +66,18 @@ function videoIdFromUrl(input) {
   } catch { /* Invalid URL; server also validates. */ }
   return null;
 }
+function spotifyIdFromUrl(input) {
+  const trimmed = input.trim();
+  if (/^spotify:track:[A-Za-z0-9]{22}$/.test(trimmed)) return trimmed.slice(14);
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol === 'https:' && ['open.spotify.com', 'spotify.com'].includes(url.hostname.toLowerCase())) {
+      return url.pathname.match(/^\/(?:intl-[a-z]{2}\/)?track\/([A-Za-z0-9]{22})\/?$/i)?.[1] || null;
+    }
+  } catch { /* Not a Spotify link. */ }
+  return null;
+}
+function hasTrack() { return Boolean(state?.playback.videoId || state?.playback.trackId); }
 function titleForUrl(url, id) {
   return url.includes('music.youtube.com') ? 'YouTube Music track' : `YouTube · ${id}`;
 }
@@ -111,14 +125,22 @@ function receiveState(next) {
   dom.shareCode.textContent = state.code;
   dom.hostTag.textContent = host ? 'HOST' : 'GUEST';
   dom.addBtn.textContent = host ? 'Play now' : 'Add to queue';
-  dom.toggle.disabled = !host || !state.playback.videoId;
+  dom.toggle.disabled = !host || !hasTrack();
   dom.next.disabled = !host || state.queue.length === 0;
-  dom.seek.disabled = !host || !state.playback.videoId;
-  dom.trackLabel.textContent = state.playback.videoId ? 'CURRENTLY PLAYING' : 'NO TRACK SELECTED';
-  dom.title.textContent = state.playback.videoId ? state.playback.title : 'Your shared soundtrack';
+  dom.seek.disabled = !host || !hasTrack();
+  dom.trackLabel.textContent = hasTrack() ? 'CURRENTLY PLAYING' : 'NO TRACK SELECTED';
+  dom.title.textContent = hasTrack() ? state.playback.title : 'Your shared soundtrack';
   dom.subtitle.textContent = host ? 'You’re the room DJ' : 'Following the host';
   dom.toggle.textContent = state.playback.playing ? 'Ⅱ' : '▶';
   dom.toggle.setAttribute('aria-label', state.playback.playing ? 'Pause for everyone' : 'Play for everyone');
+  const isSpotify = state.playback.provider === 'spotify';
+  dom.providerLabel.textContent = isSpotify ? 'Spotify' : 'YouTube';
+  dom.spotifyCard.hidden = !isSpotify;
+  const ytNode = $('youtube-player'); if (ytNode) ytNode.hidden = isSpotify;
+  dom.spotifyLink.href = isSpotify && state.playback.trackId ? `https://open.spotify.com/track/${state.playback.trackId}` : 'https://open.spotify.com/';
+  dom.spotifyConnect.textContent = spotify.connected ? 'Disconnect Spotify' : 'Connect Spotify';
+  dom.spotifyStatus.textContent = spotify.connected ? 'Spotify connected — each listener needs Spotify Premium and an active device.' : spotify.clientId ? 'Connect your own Spotify Premium account to play Spotify tracks.' : 'Spotify requires a developer client ID configured on the server.';
+  if (isSpotify) { dom.placeholder.hidden = true; dom.start.hidden = true; if (playerReady) { try { player.pauseVideo(); } catch {} } }
   const connected = state.participants.filter(p => p.online).length;
   dom.count.textContent = connected;
   dom.participants.replaceChildren();
@@ -132,12 +154,12 @@ function receiveState(next) {
   renderQueue();
   if (lastMessageId !== state.messages.at(-1)?.id) renderMessages();
   updateTimeline();
-  if (state.playback.videoId && (oldPlayback?.videoId !== state.playback.videoId)) {
+  if (hasTrack() && (oldPlayback?.videoId !== state.playback.videoId || oldPlayback?.trackId !== state.playback.trackId || oldPlayback?.provider !== state.playback.provider)) {
     userEnabledPlayback = false; playerVideo = null;
-    dom.start.hidden = false;
+    dom.start.hidden = isSpotify;
     syncPlayer(true);
   } else if (oldPlayback?.revision !== state.playback.revision) syncPlayer(true);
-  if (!state.playback.videoId) { dom.start.hidden = true; dom.placeholder.hidden = false; }
+  if (!hasTrack()) { dom.start.hidden = true; dom.placeholder.hidden = false; }
 }
 function renderQueue() {
   dom.queueCount.textContent = `${state.queue.length} song${state.queue.length === 1 ? '' : 's'}`;
@@ -147,7 +169,7 @@ function renderQueue() {
     const row = document.createElement('div'); row.className = 'queue-track';
     const art = textNode('span', '♫', 'queue-art');
     const copy = document.createElement('div'); copy.className = 'queue-copy';
-    copy.append(textNode('strong', track.title), textNode('span', `added by ${track.addedBy}`));
+    copy.append(textNode('strong', track.title), textNode('span', `${track.provider === 'spotify' ? 'Spotify' : 'YouTube'} · added by ${track.addedBy}`));
     row.append(art, copy);
     if (isHost()) {
       const play = textNode('button', '▶'); play.type = 'button'; play.setAttribute('aria-label', `Play ${track.title}`);
@@ -173,11 +195,12 @@ function updateTimeline() {
   if (!state) return;
   const pos = estimatedPosition();
   let duration = 0;
-  try { if (playerReady) duration = Number(player.getDuration()) || 0; } catch { /* Not yet ready. */ }
+  try { if (state.playback.provider !== 'spotify' && playerReady) duration = Number(player.getDuration()) || 0; } catch { /* Not yet ready. */ }
   dom.position.textContent = timeLabel(pos);
   dom.duration.textContent = timeLabel(duration);
   if (!isDragging) { dom.seek.max = String(Math.max(duration || 1, pos, 1)); dom.seek.value = String(Math.min(pos, Number(dom.seek.max))); }
-  if (!state.playback.videoId) dom.syncText.textContent = 'Waiting for a song';
+  if (!hasTrack()) dom.syncText.textContent = 'Waiting for a song';
+  else if (state.playback.provider === 'spotify') dom.syncText.textContent = spotify.connected ? 'Spotify · syncing your own player' : 'Connect Spotify to listen';
   else if (!userEnabledPlayback) dom.syncText.textContent = 'Tap play on the video to enable audio';
   else if (state.playback.playing) dom.syncText.textContent = 'Following the room timeline';
   else dom.syncText.textContent = 'Paused for everyone';
@@ -208,6 +231,7 @@ function createPlayer(videoId) {
   });
 }
 function syncPlayer(force) {
+  if (state?.playback.provider === 'spotify') { spotify.syncPlayback(state.playback, estimatedPosition(), force); return; }
   if (!state?.playback.videoId || !youtubeReady) return;
   if (!player) return createPlayer(state.playback.videoId);
   if (!playerReady || applying) return;
@@ -238,7 +262,7 @@ function syncPlayer(force) {
   } catch (error) { console.debug('Sync pending', error); }
 }
 async function onYouTubeState(event) {
-  if (Date.now() < suppressPlayerEventsUntil || !state || !isHost()) return;
+  if (Date.now() < suppressPlayerEventsUntil || !state || !isHost() || state.playback.provider === 'spotify') return;
   // Translate deliberate host interaction with official YouTube controls into room events.
   try {
     if (event.data === YT_PLAYING && !state.playback.playing) {
@@ -290,30 +314,32 @@ dom.addForm.addEventListener('submit', async event => {
   event.preventDefault();
   if (!credentials) return;
   const input = dom.input.value.trim();
-  const videoId = videoIdFromUrl(input);
-  if (!videoId || !/^[A-Za-z0-9_-]{11}$/.test(videoId)) return showToast('Paste a valid YouTube / YouTube Music video link.');
-  const title = titleForUrl(input, videoId);
-  const result = await act(isHost() ? 'setTrack' : 'enqueue', { videoId, title });
+  const trackId = spotifyIdFromUrl(input);
+  const videoId = trackId ? null : videoIdFromUrl(input);
+  if (!trackId && (!videoId || !/^[A-Za-z0-9_-]{11}$/.test(videoId))) return showToast('Paste an official Spotify track, YouTube or YouTube Music link.');
+  const provider = trackId ? 'spotify' : 'youtube';
+  const title = trackId ? 'Spotify track' : titleForUrl(input, videoId);
+  const result = await act(isHost() ? 'setTrack' : 'enqueue', { provider, trackId, videoId, title });
   if (result) { dom.input.value = ''; showToast(isHost() ? 'Track loaded. Tap play to start!' : 'Added to room queue!'); }
 });
 dom.toggle.addEventListener('click', async () => {
-  if (!isHost() || !state?.playback.videoId) return;
+  if (!isHost() || !hasTrack()) return;
   userEnabledPlayback = true;
   dom.start.hidden = true;
-  if (playerReady) {
+  if (playerReady && state.playback.provider !== 'spotify') {
     try { suppressPlayerEventsUntil = Date.now() + 1800; if (state.playback.playing) player.pauseVideo(); else player.playVideo(); } catch {}
   }
   await act(state.playback.playing ? 'pause' : 'play');
 });
 dom.next.addEventListener('click', () => { if (isHost()) act('next'); });
 dom.sync.addEventListener('click', () => {
-  if (!state?.playback.videoId) return showToast('Add a song first.');
+  if (!hasTrack()) return showToast('Add a song first.');
   userEnabledPlayback = true;
   dom.start.hidden = true;
-  if (playerReady) {
+  if (playerReady && state.playback.provider !== 'spotify') {
     try { suppressPlayerEventsUntil = Date.now() + 1300; player.seekTo(estimatedPosition(), true); if (state.playback.playing) player.playVideo(); } catch {}
   }
-  syncPlayer(true); showToast('Caught up with the room.');
+  syncPlayer(true); showToast(state.playback.provider === 'spotify' ? 'Refreshing Spotify sync…' : 'Caught up with the room.');
 });
 dom.start.addEventListener('click', () => {
   if (!state?.playback.videoId) return;
@@ -333,8 +359,16 @@ dom.chatForm.addEventListener('submit', async event => {
   if (await act('chat', { text })) dom.chatText.value = '';
 });
 dom.leave.addEventListener('click', leaveRoom);
+dom.spotifyConnect.addEventListener('click', async () => {
+  if (spotify.connected) { spotify.disconnect(); dom.spotifyConnect.textContent = 'Connect Spotify'; dom.spotifyStatus.textContent = 'Spotify disconnected.'; return; }
+  if (navigator.userAgent.includes('ShatsuAndroid/')) {
+    showToast('For Spotify login, tap Brave ↗ in the Android app toolbar first.'); return;
+  }
+  try { await spotify.connect(credentials?.code); } catch (error) { showToast(error.message); }
+});
 
 const savedName = localStorage.getItem('shatsu.name'); if (savedName) dom.nickname.value = savedName;
+spotify.init().catch(error => showToast(error.message)).then(() => {
 const inviteCode = new URLSearchParams(location.search).get('room');
 if (inviteCode && /^[A-Z2-9]{8}$/i.test(inviteCode)) {
   setMode('join'); dom.code.value = inviteCode.toUpperCase();
@@ -347,5 +381,6 @@ if (inviteCode && /^[A-Z2-9]{8}$/i.test(inviteCode)) {
     } catch { sessionStorage.removeItem(`shatsu.${inviteCode.toUpperCase()}`); }
   }
 }
+});
 loadYouTubeApi();
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('/sw.js').catch(() => {});

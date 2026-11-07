@@ -1,65 +1,77 @@
 # Shatsu 🎧 — listen together
 
-**Version:** 0.1.0 alpha · **Stack:** dependency-free Node.js 20+ + vanilla HTML/CSS/JavaScript + YouTube IFrame Player API.
+**Version 0.2.0-alpha** · Node.js 20+ web/server app + native Android companion.
 
-Shatsu is a mobile-first, installable web app (PWA) where friends create private room codes, paste YouTube or YouTube Music links, view the same embedded video, share a queue, and synchronize play/pause/seek actions in near-real time. It is optimized for mobile browsers such as Brave and can be opened on Android.
+Shatsu lets friends create a private room, share a queue and chat, and use **their own player** to hear the same song with approximate synchronization. Available providers in this alpha:
 
-## Run locally
+- **YouTube / YouTube Music video links:** official visible YouTube IFrame player in Shatsu's website. This **does not control the native YouTube Music app** and does not bypass background-play or ad rules.
+- **Spotify track links:** Spotify Web API, individual Spotify Premium accounts and their own active Spotify apps/devices. Each listener authorizes independently. This is **not Spotify audio streaming or rebroadcasting**. It is currently unverified on real Spotify accounts and may be restricted by Spotify developer access.
+- **Brave:** open the Shatsu web app in Brave. Spotify sign-in should happen in a full browser, not the embedded Android WebView.
 
-```bash
-cd shatsu
+One room can queue tracks from either provider. Switching from YouTube to Spotify requires Spotify listeners to connect their accounts. **Cross-provider matching** (one user on Spotify, another playing the same recording on YouTube) is **not implemented**.
+
+## Start web app / server
+
+```sh
 npm start
 ```
 
-Open `http://localhost:4173` on your computer. To use it with multiple phones on the **same Wi-Fi**, run with `HOST=0.0.0.0 npm start`, find your computer's LAN IP, then open `http://YOUR-LAN-IP:4173` on both phones. **Browser media/embed and clipboard behavior can differ on insecure HTTP origins**, so publicly shared rooms should use an HTTPS deployment.
+Open `http://localhost:4173`. Local tests: `npm run check && npm test`. The server uses port `PORT` (default 4173) and host `HOST` (default `0.0.0.0`). To invite friends across the internet, deploy this Node server behind **HTTPS** on a host with long-running processes and SSE support. Room state is in memory and expires after inactivity, so **use a single server instance** for now. There is no deployed Shatsu server included with this source.
 
-There are **no npm dependencies**. Run tests with:
+### Spotify setup (optional)
 
-```bash
-npm run check
-npm test
+1. Create an application at [Spotify for Developers](https://developer.spotify.com/dashboard) with access to the Web API. Check development-mode user limits and Spotify terms; public availability is **not guaranteed**.
+2. Set the exact redirect URI to `https://YOUR_SHATSU_DOMAIN/` on Spotify's app settings. For local testing, register `http://127.0.0.1:4173/` and open that exact address; the client redirects to `location.origin + '/'`.
+3. Set the environment variable `SHATSU_SPOTIFY_CLIENT_ID` to your **public client ID** before launching the Node server. **Do not put a Spotify client secret in GitHub or browser code.**
+4. On each listener's phone, open Shatsu in **Brave** or another regular browser, join the room and tap **Connect Spotify**. Each account must be authorized to use your developer app and eligible for playback (normally Spotify Premium).
+5. Open the official Spotify app and start a song once to activate a playback device. Paste a Spotify `open.spotify.com/track/...` link into the room. The host controls play, pause and seek; the browser attempts to keep each authorized player's Spotify app close to the room position.
+
+Spotify uses **OAuth Authorization Code + PKCE**. Access and refresh tokens are stored per browser tab in `sessionStorage` and sent **only to Spotify endpoints**; the Shatsu room server receives only track IDs and playback state. This is an alpha integration and still needs real-device testing for timing, device handoff, account limitations and rate limits.
+
+## Build the Android APK
+
+The native Android launcher lives in [`android/`](android/). Its own screen provides the Shatsu room web UI in a WebView, a **Brave ↗** shortcut, and a server address setting. The APK is **not a standalone server**: you must enter your deployed Shatsu HTTPS URL on first launch, or use a local LAN HTTP URL while testing.
+
+**Recommended for Spotify:** use the launcher **Brave ↗** button and connect inside Brave. Spotify authorization in the Android embedded WebView is deliberately disabled because the OAuth verifier is browser-session-local.
+
+On GitHub, open **Actions → Shatsu Android APK → latest run → Artifacts** and download `Shatsu-v0.2.0-alpha-debug-APK`. Installing this debug APK may require allowing installs from your browser/file manager. Debug APKs are signed with an ephemeral CI debug key, so future builds may require uninstalling the previous debug build (which deletes local app settings). Do not treat this as an official production-signed release.
+
+To build locally, install Android SDK platform 35, Java 17, Gradle 8.11.1, then run:
+
+```sh
+gradle -p android :app:assembleDebug
 ```
 
-## Deploy for friends over the Internet
+APK: `android/app/build/outputs/apk/debug/app-debug.apk`. The GitHub workflow builds this automatically on changes under `android/`.
 
-Deploy this Node HTTP server on a hosting service that supports persistent Node processes and server-sent events (SSE), attach an HTTPS domain, and set `PORT` according to your host. Examples include Render, Railway, a VPS, or a similar Node host. **The source ZIP is not a live, hosted service and no public URL is supplied.** Rooms are stored in memory; they disappear on restart and expire after 12 hours without activity. A single server process is required for this initial version.
+## Features
 
-## Features implemented
+- Private, randomly generated 8-character room codes with 16 listeners maximum.
+- Queue, room chat, room permissions; host can play/pause/seek/skip.
+- Official YouTube embedded player, visible in the room.
+- Spotify track-link identification, browser PKCE authorization, Spotify Web API device playback commands.
+- SSE events, client/server clock-offset calculation, drift correction and reconnects.
+- Simple Android installer with URL configuration and Brave shortcut.
+- Automated Node tests plus separate Android APK build workflow.
 
-- Create room, join via invite link or code, resume within the same tab session.
-- 8-character random room codes, 16-person room limit.
-- Official visible YouTube iframe player; accepts `youtube.com`, `youtu.be`, and `music.youtube.com/watch?v=` links.
-- Host-only play/pause/seek/skip and picking a queued track.
-- Shared queue (any participant can enqueue), up to 60 items.
-- Live room chat, up to 80 messages displayed and retained while room exists.
-- Room updates via authenticated mutation endpoints and SSE event feed; client clock offset and periodic playback drift correction.
-- Room presence updates; reconnect after connection loss.
-- Installable PWA manifest + service worker shell cache; **music playback is not available offline**.
-- YouTube embeds are preserved, not altered, hidden, extracted, or re-streamed.
+## Caveats, security and provider constraints
 
-## Known limitations
+- **No audio is proxied, copied, downloaded, extracted, ad-blocked, or broadcast from Shatsu**. Every device uses an authorized official player.
+- YouTube embeds can refuse particular videos, require user interaction, or pause during backgrounding/lock-screen. Shatsu does not provide hidden YouTube audio playback.
+- Spotify controls may fail without Spotify Premium, an active playback device or an authorized developer app user. Multi-device precision cannot be guaranteed; expect timing drift on mobile networks.
+- The native Android WebView is primarily for YouTube rooms; use Brave for full Spotify PKCE login. Android WebView YouTube embed compatibility may vary by OS version and WebView implementation.
+- Room data is in memory and can be lost on restart. There are no permanent accounts, admin moderation, production rate limits, multi-server persistence or anti-abuse systems. Anyone with the room code can see room contents.
+- Debug builds allow HTTP **only for private/LAN development addresses** in the UI. Always use HTTPS with a public server.
 
-- **No Spotify playback yet.** The Android App Remote SDK needs a Spotify developer client ID, approved redirect, auth, Spotify app installation, eligible user accounts, and testing. Spotify's restrictions may limit production deployment.
-- YouTube Music **links** can play through supported official YouTube embeds, but Shatsu **cannot remotely control the YouTube Music app**.
-- Some YouTube videos have embeddings disabled, region restrictions, or age restrictions.
-- The official YouTube video remains visible with normal player behavior; **not a screen-off/background YouTube audio player**.
-- Mobile browsers can block autoplay. Each listener should tap the in-page video or “Tap to start listening” once. Exact sample-level sync is not possible; network/buffering can cause drift.
-- Persistence, real accounts, moderation, admin controls, voice chat, and multi-server scaling are planned, not implemented.
-- No signed Android APK is included. In Android, the PWA can be used in Brave and added to the home screen where the browser supports it.
+## Files
 
-## Architecture
-
-- `server.js`: HTTP static server + JSON room API + SSE streaming.
-- `lib/rooms.js`: room validation, permissions, queue, timelines, expiration.
-- `public/app.js`: browser client + YouTube IFrame API and timestamp-based sync.
-- `public/styles.css`: responsive music-room experience.
-- `tests/rooms.test.js`: HTTP and data-model tests.
-- `docs/providers.md`: next steps for Spotify and other services.
-
-## Security notes
-
-This release is an **early alpha**, not hardened public infrastructure. Anyone with the room code can join and read room messages. Playback commands require an unguessable per-participant token, with host-only authorization enforced on the server. Data is held in memory. Chat and titles are rendered as text nodes, never as untrusted HTML. Before public launch, add per-IP rate limiting, abuse controls, persistent state, privacy policy, structured logging, token revocation, and automated browser-level verification.
+- [`server.js`](server.js) — Node HTTP room API, SSE and static files.
+- [`lib/rooms.js`](lib/rooms.js), [`lib/track.js`](lib/track.js) — host-authoritative room timeline and provider-link validation.
+- [`public/app.js`](public/app.js), [`public/spotify.js`](public/spotify.js) — room client, YouTube IFrame sync and Spotify PKCE control.
+- [`android/`](android/) — Android native app shell.
+- [`.github/workflows/android.yml`](.github/workflows/android.yml) — Android APK builder.
+- [`docs/providers.md`](docs/providers.md) — provider architecture and next steps.
 
 ## Attribution
 
-YouTube videos are played with the official YouTube IFrame API, subject to [YouTube API Services policies](https://developers.google.com/youtube/terms/developer-policies) and [YouTube IFrame API documentation](https://developers.google.com/youtube/iframe_api_reference). No YouTube audio is downloaded or extracted.
+YouTube embeds use the [YouTube IFrame Player API](https://developers.google.com/youtube/iframe_api_reference). Spotify control uses the [Spotify Web API](https://developer.spotify.com/documentation/web-api/) with [PKCE](https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow). Provider terms and developer access requirements apply.

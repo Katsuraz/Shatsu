@@ -38,26 +38,26 @@
       <section class="player-column">
         <div class="room-header"><div><div class="eyebrow small">YOU'RE LISTENING IN</div><h1>Good vibes only<span class="brand-dot">.</span></h1></div><span class="live-chip"><span class="status-dot"></span> LIVE ROOM</span></div>
         <div class="player-card">
-          <div class="player-top"><span id="track-label">NO TRACK SELECTED</span><span class="provider"><span class="provider-play">▶</span> YouTube</span></div>
-          <div class="video-area" id="video-area"><div class="empty-player" id="player-placeholder"><div class="empty-disc">♫</div><strong>Ready when you are.</strong><span>Paste a YouTube or YouTube Music link below.</span></div><div id="youtube-player"></div></div>
+          <div class="player-top"><span id="track-label">NO TRACK SELECTED</span><span class="provider"><span class="provider-play">▶</span> <span id="provider-label">YouTube</span></span></div>
+          <div class="video-area" id="video-area"><div class="empty-player" id="player-placeholder"><div class="empty-disc">♫</div><strong>Ready when you are.</strong><span>Paste a YouTube or YouTube Music link below.</span></div><div id="youtube-player"></div><div class="spotify-card" id="spotify-card" hidden><div class="spotify-mark">♫</div><strong>Spotify listening</strong><p>This track plays in your own Spotify app. Connect your account below and start Spotify to activate your device.</p><a id="spotify-open" href="https://open.spotify.com/" rel="noopener noreferrer" target="_blank">Open track in Spotify ↗</a></div></div>
           <div class="now-playing"><div class="song-disc">♫</div><div class="song-info"><div class="eyebrow small">NOW PLAYING</div><strong id="current-title">Your shared soundtrack</strong><span id="track-subtitle">Waiting for the first song</span></div></div>
           <div class="timeline"><span id="position">0:00</span><input id="seek" type="range" min="0" max="100" value="0" aria-label="Seek position"><span id="duration">0:00</span></div>
           <div class="transport"><button id="sync-btn" class="icon-btn" title="Catch up with the host" aria-label="Catch up with the host">↻</button><button id="toggle-btn" class="play-btn" aria-label="Play or pause">▶</button><button id="next-btn" class="icon-btn" title="Next in queue" aria-label="Next in queue">⏭</button></div>
           <div class="sync-status"><span class="pulse-dot"></span><span id="sync-text">Waiting for a song</span></div>
           <button class="enable-audio" id="enable-audio" hidden>▶ Tap to start listening</button>
         </div>
-        <form id="add-form" class="add-song"><div class="add-input"><span class="link-icon">↗</span><input id="video-url" type="url" placeholder="Paste YouTube or YouTube Music link..." required aria-label="YouTube link"></div><button class="primary-btn" id="add-btn" type="submit">Play now</button></form>
+        <form id="add-form" class="add-song"><div class="add-input"><span class="link-icon">↗</span><input id="video-url" type="url" placeholder="Paste Spotify, YouTube or YouTube Music link..." required aria-label="YouTube link"></div><button class="primary-btn" id="add-btn" type="submit">Play now</button></form>
         <div class="hint">YouTube's official video player remains visible. Some videos may not allow embedding. Playback requires a tap on some devices.</div>
       </section>
       <aside class="room-sidebar">
         <div class="panel room-share"><div class="panel-heading"><h2>Your room</h2><span class="chip" id="host-tag">HOST</span></div><div class="code-box"><div><span class="micro">ROOM CODE</span><strong id="share-code">--------</strong></div><button id="copy-btn" aria-label="Copy invite link">Copy link ↗</button></div><div class="participants-heading">Listening now <span id="listener-count">0</span></div><div id="participants" class="participants"></div></div>
         <div class="panel queue-panel"><div class="panel-heading"><h2>Up next</h2><span id="queue-count" class="chip subdued">0 songs</span></div><div id="queue-list" class="queue-list"><p class="empty-list">The queue's wide open. Add a song!</p></div></div>
         <div class="panel chat-panel"><div class="panel-heading"><h2>Room chat <span class="chat-heart">♡</span></h2></div><div id="messages" class="messages" role="log" aria-label="Room chat"><p class="empty-list">Say hi to your friends 👋</p></div><form id="chat-form" class="chat-composer"><input id="chat-text" maxlength="280" placeholder="Say something nice..." aria-label="Chat message"><button type="submit" aria-label="Send message">↗</button></form></div>
-        <div class="coming-next"><span class="soon-dot">✦</span> Spotify playback integration is planned — not active in this build.</div>
+        <div class="panel spotify-panel"><div class="panel-heading"><h2>Spotify</h2><span class="chip subdued">PREMIUM</span></div><p id="spotify-status">Spotify authorization is loading…</p><button type="button" id="spotify-connect" class="spotify-connect">Connect Spotify</button><p class="tiny-provider-note">Each listener connects their own account. Spotify playback is controlled via the official Web API, not re-streamed.</p></div>
         <button id="leave-btn" class="leave-btn">← Leave room</button>
       </aside>
     </main>
-    <footer class="footer"><span>shatsu · v0.1.0 alpha</span><span>listen closer, even from afar ♡</span></footer>
+    <footer class="footer"><span>shatsu · v0.2.0 alpha</span><span>listen closer, even from afar ♡</span></footer>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="/app.js" type="module"></script>
