@@ -1,6 +1,6 @@
 # Shatsu 🎧 — listen together
 
-**Version 0.3.2-alpha** · Node.js 20+ web/server app + native Android companion.
+**Version 0.4.0-alpha** · Node.js 20+ web/server app + native Android companion.
 
 Shatsu lets friends create a private room, search Audius for free with no API key or account, explore other supported music catalogs, share a queue and chat, and use **their own player** to hear the same song with approximate synchronization. The host controls shared Auto Play, Auto Next, Shuffle, Repeat and previous-track history. Volume affects only the local YouTube player. Available providers in this alpha:
 
@@ -32,6 +32,14 @@ new versioned prerelease when `android/app/build.gradle`'s `versionName` changes
 
 See the [friendly step-by-step user guide](docs/USER_GUIDE.md) for current
 usage, limitations and troubleshooting.
+
+## Android background audio (v0.4 alpha)
+
+Shatsu now includes an opt-in Android **foreground music service** for supported publicly streamable Audius tracks. It uses an Android `MediaPlayer`, a platform `MediaSession` and a persistent media notification. When a room is playing Audius, tap **🎧 Play in background** inside the Audius player and approve once. The Android service follows the room state using your room session token even if the web interface is not running, so you can lock your device, switch apps, or swipe the Shatsu activity away without intentionally stopping music. The host's background service can send **Auto Next** to the room when the track ends. Guests follow the same room timeline; Android media notification provides pause/play and a host-only Next action.
+
+This is an **experimental alpha**. Android battery management, OEM restrictions, connectivity, stream availability and users explicitly force-stopping the app can interrupt playback. Shatsu must be launched again after a force stop. A user-initiated foreground media service remains visible in Android notifications until stopped. Tap **■ Stop background audio** or Stop in the notification to end it. On returning to Shatsu, the web player avoids duplicating audio while the native service is active.
+
+**Restrictions:** YouTube's official embedded player is foreground only; its policies prohibit third-party API clients from continuing background playback after being minimized. Do not extract or proxy YouTube audio to work around this. Spotify already supports background playback through its official app for eligible accounts; Shatsu's Spotify integration remains separate and unverified. Audius has a smaller/different catalog than YouTube or Spotify. A mainstream, free, background-capable cross-service library cannot be promised without valid licensing or provider support.
 
 ## Free, no-setup music search and automatic playback (v0.3.2)
 
