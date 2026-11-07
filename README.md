@@ -18,6 +18,18 @@ npm start
 
 Open `http://localhost:4173`. Local tests: `npm run check && npm test`. The server uses port `PORT` (default 4173) and host `HOST` (default `0.0.0.0`). To invite friends across the internet, deploy this Node server behind **HTTPS** on a host with long-running processes and SSE support. Room state is in memory and expires after inactivity, so **use a single server instance** for now. There is no deployed Shatsu server included with this source.
 
+### Put Shatsu online (Android + friends)
+
+The APK needs a publicly reachable Shatsu server. You can deploy one from this repository using [Deploy to Render](https://render.com/deploy?repo=https://github.com/Katsuraz/Shatsu). The repo includes `render.yaml` with a Node web service, a Singapore region, and an optional Spotify client ID setting.
+
+1. Sign in to Render and approve access to `Katsuraz/Shatsu`.
+2. Create the Blueprint service and complete the deployment (check hosting plan terms and current availability).
+3. Copy its HTTPS address, such as `https://YOUR-SERVICE.onrender.com`.
+4. Install the Shatsu APK, launch it, and paste that exact HTTPS address in the first-run prompt.
+5. For Spotify, add the public `SHATSU_SPOTIFY_CLIENT_ID` environment variable on Render and register `https://YOUR-SERVICE.onrender.com/` as an exact redirect URI in your Spotify developer dashboard. Each friend must authorize their own eligible Spotify account.
+
+**Free hosting may sleep during inactivity**, disrupting SSE connections and wiping Shatsu's in-memory rooms after a restart. For reliable everyday hosting, use a persistent server and eventually add durable room storage. This Blueprint does not deploy anything automatically; you must connect your hosting account and complete setup.
+
 ### Spotify setup (optional)
 
 1. Create an application at [Spotify for Developers](https://developer.spotify.com/dashboard) with access to the Web API. Check development-mode user limits and Spotify terms; public availability is **not guaranteed**.
