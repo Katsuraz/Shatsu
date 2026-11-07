@@ -25,16 +25,32 @@ You can reopen it by tapping **? How to use** at the top, or **⋮ → How to us
 2. Your friend opens the link on their phone, enters their nickname and taps **Join room**.
 3. If their link doesn't open automatically, share the **room code** and they can use **Join a room** on Shatsu's home screen.
 
-## 4. Add music and listen together
+## 4. Find a song inside Shatsu and keep the queue playing
 
-1. Open **YouTube** or **YouTube Music** and copy a public video's share link.
-2. Paste the link in Shatsu's song field, then tap **Play now**. (Guests add songs to the queue.)
-3. Tap **▶** to start the room. Each listener may need to tap the video or **Tap to start listening** to allow playback on their phone.
-4. If someone falls behind, they can press **↻** to catch up. Chat and the song queue are on the same page.
+1. Enter or join a room. Open **Music Library → Search song or artist**.
+2. Choose **YouTube** or **Spotify** as the provider and tap **Search**.
+3. Tap **Play** on a result if you're the host. Guests see **+ Queue**, which adds a song for the host to play.
+4. For YouTube, the owner must configure a **YouTube Data API v3 key** once on the server for live search. If search is not yet configured, use **Have a song link? Paste it here instead**. Any song you select is saved to **Recently Played** on your own device, so next time you can pick it directly without a URL.
+5. Tap the player or **Tap to start listening** if your browser asks permission to play video/audio.
 
-Shatsu plays through official YouTube **video** embeds. It **does not** control the
-YouTube Music app directly, extract audio, bypass ads, or guarantee background playback with the screen locked.
-Not every video allows embedding. Try a different public video if one fails.
+### Room controls
+
+| Control | What it does |
+| --- | --- |
+| **▶ / Ⅱ** | Host starts or pauses the room |
+| **⏭ Next** | Host skips to the next queued track |
+| **⏮ Previous** | Host returns to a song from room playback history |
+| **Auto Play** | Automatically starts newly selected tracks on the room timeline (on by default) |
+| **Auto Next** | When the host's YouTube player reaches the end, starts the next queued song (on by default) |
+| **Shuffle** | Randomizes which queued track plays next |
+| **Repeat Off / One / All** | Plays normally, repeats current song or rotates played songs back through the queue |
+| **Volume** | Adjusts the YouTube player on only your phone |
+| **↻** | Resynchronizes your local player to the host timeline |
+
+**Auto Next uses tracks already in the queue; it does not invent recommended songs.**
+If the queue is empty, music stops unless Repeat is enabled. Spotify **automatic end detection is not implemented**; press Next manually for Spotify songs. Mobile browsers can block autoplay until every listener taps their player once.
+
+Shatsu plays through official YouTube visible **video** embeds. It **does not** control the YouTube Music app directly, extract audio, bypass ads, or guarantee background playback with a locked screen. Not every YouTube video permits embedding.
 
 ## 5. Spotify (optional, not plug-and-play yet)
 
@@ -46,7 +62,7 @@ and have an active Spotify playback device.
 1. Tap **Brave ↗** in the Android app (or open the Shatsu URL directly in Brave).
 2. Join your Shatsu room, then tap **Connect Spotify**.
 3. Authorize your own Spotify account when prompted; open the Spotify app and start a track once to activate playback.
-4. Paste a Spotify track link in Shatsu. Each phone streams through its own Spotify app.
+4. Search Spotify inside the Music Library or paste a Spotify track link. Each phone streams through its own Spotify app.
 
 The Spotify integration has not yet passed live-device testing. It may be unavailable
 until developer approval is complete. You cannot listen to one song through YouTube
@@ -68,7 +84,7 @@ signing is planned before a stable release.
 | Problem | What to do |
 | --- | --- |
 | "Shatsu is waking up" | The free server may be sleeping. Keep the app open, then tap **Try again**. |
-| Blank page or YouTube video won't play | Use **Brave ↗**, check internet access, tap play on the video and try another embeddable link. |
+| YouTube search says not configured | The Shatsu server owner needs to add a YouTube Data API key on Render. Until then use Recent or paste a link. |\n| Blank page or YouTube video won't play | Use **Brave ↗**, check internet access, tap play on the video and try another embeddable link. |
 | Friend cannot join | Make sure both use the **same active room link/code**. Room state can disappear when the free server restarts. |
 | Music is behind | Tap **↻** on the slower phone. Precise, sample-perfect synchronization is not guaranteed. |
 | Spotify button won't connect | Open the room in **Brave**, not the Android WebView; a developer client ID, account eligibility and an active device are required. |
@@ -76,7 +92,7 @@ signing is planned before a stable release.
 
 ## For the project owner
 
-- GitHub code: https://github.com/Katsuraz/Shatsu
+- **Enable YouTube search**: Create a Google Cloud project with YouTube Data API v3 enabled, obtain an API key restricted to that API, and add `SHATSU_YOUTUBE_API_KEY` to the existing Shatsu Render service under Environment. Do not put the key in the repository, APK, or chat. A new server deployment is required after adding the key. Google imposes search quotas.\n- GitHub code: https://github.com/Katsuraz/Shatsu
 - Live server: https://shatsu.onrender.com
 - Render: https://dashboard.render.com — the Shatsu server is live, but **automatic deploys currently require linking the GitHub repository as a connected provider source**.
 - GitHub Actions: https://github.com/Katsuraz/Shatsu/actions — runs tests and assembles a debug APK for Android changes.
