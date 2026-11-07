@@ -1,6 +1,6 @@
 # Shatsu 🎧 — listen together
 
-**Version 0.3.0-alpha** · Node.js 20+ web/server app + native Android companion.
+**Version 0.3.1-alpha** · Node.js 20+ web/server app + native Android companion.
 
 Shatsu lets friends create a private room, search the supported music catalogs, share a queue and chat, and use **their own player** to hear the same song with approximate synchronization. The host controls shared Auto Play, Auto Next, Shuffle, Repeat and previous-track history. Volume affects only the local YouTube player. Available providers in this alpha:
 
@@ -35,7 +35,7 @@ usage, limitations and troubleshooting.
 
 ## Music discovery and automatic playback (v0.3)
 
-- **Inside a room:** open the Music Library, type a song/artist, choose YouTube or Spotify, press Search and then Play (host) or + Queue (guest). Links still work under "Have a song link?".
+- **Inside a room:** open the Music Library, type a song/artist, choose YouTube or Spotify, press Search and then Play (host) or + Queue (guest). Paste a valid YouTube/YouTube Music/Spotify track link into the **same input** to play or enqueue directly, without a YouTube API key. A separate link field remains under "Have a song link?".
 - **Your own recent tracks:** searched/linked songs that you select appear in Recent on that phone, even before catalog search is enabled.
 - **YouTube catalog search:** uses the official YouTube Data API v3. **Not operational until the server owner configures `SHATSU_YOUTUBE_API_KEY`** in the Render service's Environment settings. Enable YouTube Data API v3 in your Google Cloud project and create an API key limited to the YouTube Data API. The key is never shipped in the APK or browser. Render deploys after environment changes. YouTube imposes usage quotas, so Shatsu caches searches. Video embedding can still be unavailable per video or region.
 - **Spotify catalog search:** requires an already-connected eligible Spotify user and a Spotify app client ID configured through `SHATSU_SPOTIFY_CLIENT_ID`. Use Shatsu in Brave for authorization. Spotify developer mode limits apply. Spotify controls each listener's **own** official app; this is not a free Spotify Premium bypass.
