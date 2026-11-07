@@ -15,11 +15,22 @@ const dom = {
   seek: $('seek'), position: $('position'), duration: $('duration'), syncText: $('sync-text'),
   queue: $('queue-list'), queueCount: $('queue-count'), chat: $('messages'), chatForm: $('chat-form'), chatText: $('chat-text'),
   leave: $('leave-btn'), toast: $('toast'), spotifyCard: $('spotify-card'), spotifyLink: $('spotify-open'), spotifyConnect: $('spotify-connect'), spotifyStatus: $('spotify-status'), providerLabel: $('provider-label'),
-  audiusCard: $('audius-card'), audiusAudio: $('audius-audio')
+  audiusCard: $('audius-card'), audiusAudio: $('audius-audio'), nativeBackgroundBtn: $('native-background-btn'), nativeBackgroundNote: $('native-background-note')
 };
 let mode = 'create', credentials = null, state = null, events = null;
 let player = null, playerReady = false, youtubeReady = false, playerVideo = null;
 let userEnabledPlayback = false, suppressPlayerEventsUntil = 0;
+let nativeBackground = false;
+const nativeAudioAvailable = Boolean(window.ShatsuAndroid?.startBackground && window.ShatsuAndroid?.stopBackground);
+function updateBackgroundUI() {
+  if (!dom.nativeBackgroundBtn) return;
+  dom.nativeBackgroundBtn.hidden = !nativeAudioAvailable || state?.playback?.provider !== 'audius';
+  dom.nativeBackgroundBtn.textContent = nativeBackground ? '■ Stop background audio' : '🎧 Play in background';
+  dom.nativeBackgroundNote.textContent = nativeAudioAvailable
+    ? (nativeBackground ? 'Playing through Android media controls. You can lock your screen or leave Shatsu; use Stop to end background playback.' :
+      'Tap Play in background to keep Audius streaming when Shatsu is minimized or your screen locks.')
+    : 'Background playback is available in the Shatsu Android APK for permitted audio. The web browser cannot guarantee it.';
+}
 let serverOffset = 0, updateInterval = null, presenceInterval = null, clockInterval = null;
 let isDragging = false, toastTimeout = null, applying = false;
 const YT_PLAYING = 1, YT_PAUSED = 2, YT_ENDED = 0;
@@ -103,6 +114,8 @@ async function enterRoom(data) {
   window.history.replaceState(null, '', `/?room=${encodeURIComponent(data.code)}`);
   dom.lobby.hidden = true; dom.room.hidden = false;
   document.title = `Shatsu · ${data.code}`;
+  try { nativeBackground = nativeAudioAvailable && Boolean(window.ShatsuAndroid.isBackgroundEnabled(data.code)); }
+  catch { nativeBackground = false; }
   receiveState(data.state);
   connectEvents();
   await measureServerTime();
@@ -161,6 +174,8 @@ function receiveState(next) {
   dom.audiusCard.hidden = !isAudius;
   const ytNode = $('youtube-player'); if (ytNode) ytNode.hidden = isSpotify || isAudius;
   if (!isAudius && audiusPlayer.trackId) audiusPlayer.reset();
+  if (!isAudius) nativeBackground = false;
+  updateBackgroundUI();
   if (isAudius && playerReady) { try { player.pauseVideo(); } catch {} }
   dom.spotifyLink.href = isSpotify && state.playback.trackId ? `https://open.spotify.com/track/${state.playback.trackId}` : 'https://open.spotify.com/';
   dom.spotifyConnect.textContent = spotify.connected ? 'Disconnect Spotify' : 'Connect Spotify';
@@ -270,6 +285,10 @@ function createPlayer(videoId) {
 }
 function syncPlayer(force) {
   if (state?.playback.provider === 'audius') {
+    if (nativeBackground) {
+      if (audiusPlayer.trackId) audiusPlayer.reset(); // Never play audio twice.
+      return;
+    }
     audiusPlayer.sync(state.playback, estimatedPosition(), { force, canPlay: userEnabledPlayback });
     return;
   }
@@ -335,6 +354,7 @@ async function leaveRoom() {
   if (credentials) sessionStorage.removeItem(`shatsu.${credentials.code}`);
   if (player) { try { player.destroy(); } catch {} }
   audiusPlayer.reset();
+  nativeBackground = false;
   credentials = null; state = null; player = null; playerReady = false; playerVideo = null; userEnabledPlayback = false;
   const node = document.getElementById('youtube-player'); if (!node) { const div = document.createElement('div'); div.id = 'youtube-player'; $('video-area').append(div); }
   dom.room.hidden = true; dom.lobby.hidden = false;
@@ -389,11 +409,36 @@ dom.addForm.addEventListener('submit', async event => {
     showToast(isHost() ? (state?.settings?.autoPlay ? 'Song selected — starting playback!' : 'Track loaded. Tap play to start!') : 'Added to room queue!');
   }
 });
+if (dom.nativeBackgroundBtn) {
+  dom.nativeBackgroundBtn.addEventListener('click', () => {
+    if (!nativeAudioAvailable || !credentials || state?.playback?.provider !== 'audius') return;
+    if (nativeBackground) {
+      window.ShatsuAndroid.stopBackground();
+    } else {
+      window.ShatsuAndroid.startBackground(credentials.code, credentials.token, credentials.participantId);
+    }
+  });
+  window.addEventListener('shatsu:nativebackgroundstarted', () => {
+    nativeBackground = true;
+    userEnabledPlayback = true;
+    audiusPlayer.reset();
+    dom.start.hidden = true;
+    updateBackgroundUI();
+    showToast('Android background audio enabled. You can lock your screen.');
+  });
+  window.addEventListener('shatsu:nativebackgroundstopped', () => {
+    nativeBackground = false;
+    userEnabledPlayback = false;
+    dom.start.hidden = state?.playback?.provider !== 'audius';
+    updateBackgroundUI();
+    showToast('Background audio stopped. Tap ▶ to listen in Shatsu.');
+  });
+}
 dom.toggle.addEventListener('click', async () => {
   if (!isHost() || !hasTrack()) return;
   userEnabledPlayback = true;
   dom.start.hidden = true;
-  if (state.playback.provider === 'audius') {
+  if (state.playback.provider === 'audius' && !nativeBackground) {
     if (state.playback.playing) audiusPlayer.pause();
     else audiusPlayer.playByGesture().catch(() => { dom.start.hidden = false; });
   } else if (playerReady && state.playback.provider === 'youtube') {
@@ -418,7 +463,7 @@ dom.sync.addEventListener('click', () => {
   if (!hasTrack()) return showToast('Add a song first.');
   userEnabledPlayback = true;
   dom.start.hidden = true;
-  if (state.playback.provider === 'audius') {
+  if (state.playback.provider === 'audius' && !nativeBackground) {
     audiusPlayer.sync(state.playback, estimatedPosition(), { force: true, canPlay: true });
   } else if (playerReady && state.playback.provider === 'youtube') {
     try { suppressPlayerEventsUntil = Date.now() + 1300; player.seekTo(estimatedPosition(), true); if (state.playback.playing) player.playVideo(); } catch {}
@@ -428,7 +473,7 @@ dom.sync.addEventListener('click', () => {
 dom.start.addEventListener('click', () => {
   if (!hasTrack()) return;
   userEnabledPlayback = true; dom.start.hidden = true;
-  if (state.playback.provider === 'audius') {
+  if (state.playback.provider === 'audius' && !nativeBackground) {
     audiusPlayer.sync(state.playback, estimatedPosition(), { force: true, canPlay: true });
   } else if (state.playback.provider === 'youtube' && playerReady) {
     try { suppressPlayerEventsUntil = Date.now() + 1700; player.seekTo(estimatedPosition(), true); if (state.playback.playing) player.playVideo(); } catch {}
