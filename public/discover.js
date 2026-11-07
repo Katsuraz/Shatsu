@@ -20,6 +20,11 @@ function saveRecent(track) {
   try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 15))); } catch { /* Storage may be unavailable */ }
 }
 
+export function rememberRecent(track) {
+  saveRecent(track);
+  window.dispatchEvent(new Event('shatsu:recentchange'));
+}
+
 export function initDiscovery({ api, spotify, isHost, act, showToast, armPlayback }) {
   const form = $('discover-form'), results = $('discover-results'), query = $('discover-query');
   const providerSelect = $('discover-provider'), help = $('discover-help');
@@ -55,7 +60,7 @@ export function initDiscovery({ api, spotify, isHost, act, showToast, armPlaybac
         if (isHost()) armPlayback();
         const action = isHost() ? 'setTrack' : 'enqueue';
         const saved = await act(action, selected);
-        if (saved) { saveRecent(track); showToast(isHost() ? 'Song selected for the room!' : 'Added to queue!'); }
+        if (saved) { rememberRecent(track); showToast(isHost() ? 'Song selected for the room!' : 'Added to queue!'); }
         btn.disabled = false;
       });
       row.append(btn);
@@ -105,6 +110,7 @@ export function initDiscovery({ api, spotify, isHost, act, showToast, armPlaybac
     showRecent();
   });
   query.addEventListener('input', () => { if (!query.value.trim()) showRecent(); });
+  window.addEventListener('shatsu:recentchange', () => { if (lastMode === 'recent') render(loadRecent(), 'recent'); });
   window.addEventListener('shatsu:roomstate', () => {
     if (lastResults.length) render(lastResults, lastMode);
   });
