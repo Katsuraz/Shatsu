@@ -47,6 +47,9 @@ public final class RoomPlaybackService extends Service {
     private static final String CHANNEL = "shatsu_audio";
     private static final int NOTIFICATION_ID = 4202;
 
+    private static volatile boolean running = false;
+    public static boolean isRunning() { return running; }
+
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private MediaSession session;
@@ -116,6 +119,7 @@ public final class RoomPlaybackService extends Service {
         }
         localPaused = false;
         startAsForeground();
+        running = true;
         if (!started) {
             started = true;
             executor.scheduleWithFixedDelay(() -> {
@@ -361,6 +365,7 @@ public final class RoomPlaybackService extends Service {
     }
 
     @Override public void onDestroy() {
+        running = false;
         dead = true;
         executor.shutdownNow();
         clearPlayer();
