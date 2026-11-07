@@ -1,3 +1,4 @@
+import { detectSongLink, looksLikeLink } from './song-input.js';
 // In-app music discovery. Search data comes only from official YouTube/Spotify APIs.
 // All track selections still flow through the host-authoritative Shatsu room.
 const $ = id => document.getElementById(id);
@@ -32,6 +33,7 @@ export function initDiscovery({ api, spotify, isHost, act, showToast, armPlaybac
   let lastResults = [];
   let lastMode = 'recent';
   let busy = false;
+  const submit = form.querySelector('[type="submit"]');
   function render(items, mode = 'results') {
     lastResults = items;
     lastMode = mode;
@@ -73,13 +75,56 @@ export function initDiscovery({ api, spotify, isHost, act, showToast, armPlaybac
       help.textContent = 'Choose a recent song or search a music catalog. Friends can also add songs to the queue.';
     }
   }
+  function searchFallback(q) {
+    lastMode = 'fallback';
+    lastResults = [];
+    results.replaceChildren();
+    const panel = node('div', undefined, 'discover-fallback');
+    panel.append(
+      node('strong', 'Search by song name is not available yet.'),
+      node('p', 'Paste a YouTube video link above to play immediately, or find a song on YouTube and share its link.')
+    );
+    const open = node('a', 'Find song on YouTube ↗', 'discover-find-external');
+    open.href = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q);
+    open.rel = 'noopener noreferrer';
+    panel.append(open);
+    results.append(panel);
+    help.textContent = 'Song links do not need a YouTube Data API key.';
+  }
   form.addEventListener('submit', async event => {
     event.preventDefault();
     if (busy) return;
     const q = query.value.trim();
-    if (q.length < 2 || q.length > 80) return showToast('Enter 2–80 characters to search.');
+    const link = detectSongLink(q);
+    if (link) {
+      busy = true;
+      submit.disabled = true;
+      try {
+        const host = isHost();
+        const saved = await act(host ? 'setTrack' : 'enqueue', {
+          provider: link.provider, trackId: link.trackId, videoId: link.videoId, title: link.title
+        });
+        if (saved) {
+          rememberRecent(link);
+          query.value = '';
+          submit.textContent = 'Search';
+          render(loadRecent(), 'recent');
+          help.textContent = 'Link added directly — no catalog search needed.';
+          showToast(host ? 'Song loaded into the room!' : 'Song added to the queue!');
+        }
+      } finally { busy = false; submit.disabled = false; }
+      return;
+    }
+    if (looksLikeLink(q)) {
+      results.replaceChildren(node('p', 'This is not a supported song link. Use a YouTube video or Spotify track URL.', 'discover-inline-error'));
+      help.textContent = 'You can also search for a song by name.';
+      return;
+    }
+    if (q.length < 2 || q.length > 80) {
+      help.textContent = 'Enter a song or artist name (2–80 characters), or paste a song link.';
+      return;
+    }
     busy = true;
-    const submit = form.querySelector('[type="submit"]');
     submit.disabled = true;
     results.replaceChildren(node('p', 'Searching songs…', 'empty-list'));
     const provider = providerSelect.value;
@@ -97,9 +142,12 @@ export function initDiscovery({ api, spotify, isHost, act, showToast, armPlaybac
         ? 'Spotify tracks require an eligible Premium player for playback.'
         : 'YouTube videos play through the official visible video player.';
     } catch (error) {
-      results.replaceChildren(node('p', error.message || 'Search temporarily unavailable.', 'empty-list'));
-      help.textContent = 'You can still select a recent song or paste a video link below.';
-      showToast(error.message || 'Could not search.');
+      if (provider === 'youtube' && /not configured|quota|API access/i.test(error.message || '')) {
+        searchFallback(q);
+      } else {
+        results.replaceChildren(node('p', error.message || 'Search temporarily unavailable.', 'discover-inline-error'));
+        help.textContent = 'Try a song link above or select a recent track.';
+      }
     } finally { submit.disabled = false; busy = false; }
   });
   providerSelect.addEventListener('change', () => {
@@ -109,7 +157,21 @@ export function initDiscovery({ api, spotify, isHost, act, showToast, armPlaybac
       : 'Search YouTube by song or artist. The server owner must enable YouTube Data API search.';
     showRecent();
   });
-  query.addEventListener('input', () => { if (!query.value.trim()) showRecent(); });
+  query.addEventListener('input', () => {
+    const value = query.value.trim();
+    const link = detectSongLink(value);
+    submit.textContent = link ? (isHost() ? 'Play link' : '+ Queue') : 'Search';
+    if (link) {
+      providerSelect.value = link.provider;
+      render([link], 'link');
+      help.textContent = 'Recognized song link — tap Play or + Queue. No search key needed.';
+    } else if (!value) {
+      showRecent();
+    } else if (looksLikeLink(value)) {
+      results.replaceChildren(node('p', 'Checking the link…', 'empty-list'));
+      help.textContent = 'Use an official YouTube video or Spotify track URL.';
+    }
+  });
   window.addEventListener('shatsu:recentchange', () => { if (lastMode === 'recent') render(loadRecent(), 'recent'); });
   window.addEventListener('shatsu:roomstate', () => {
     if (lastResults.length) render(lastResults, lastMode);
