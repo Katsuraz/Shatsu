@@ -98,3 +98,7 @@ APK: `android/app/build/outputs/apk/debug/app-debug.apk`. The GitHub workflow bu
 ## Attribution
 
 YouTube embeds use the [YouTube IFrame Player API](https://developers.google.com/youtube/iframe_api_reference). Spotify control uses the [Spotify Web API](https://developer.spotify.com/documentation/web-api/) with [PKCE](https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow). Provider terms and developer access requirements apply.
+
+### Enable fully automatic Render deployments
+
+The service is live at https://shatsu.onrender.com. Render currently sources it from a public repository URL, which **does not support push-triggered auto-deploys** even if the service setting displays On Commit. Connect GitHub under Render Account Settings → Git Deployment Credentials; then edit the existing Shatsu service's Settings → Build → Source to select the connected `Katsuraz/Shatsu` repository. See [the owner's one-time setup guide](docs/USER_GUIDE.md#owner-enable-hands-off-hosting-updates-one-time-authorization). This is a provider authorization step and cannot be bypassed from the Android app.

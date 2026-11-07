@@ -78,10 +78,33 @@ signing is planned before a stable release.
 
 - GitHub code: https://github.com/Katsuraz/Shatsu
 - Live server: https://shatsu.onrender.com
-- Render: https://dashboard.render.com — auto-deploys new commits on `main`.
+- Render: https://dashboard.render.com — the Shatsu server is live, but **automatic deploys currently require linking the GitHub repository as a connected provider source**.
 - GitHub Actions: https://github.com/Katsuraz/Shatsu/actions — runs tests and assembles a debug APK for Android changes.
 - GitHub Releases: https://github.com/Katsuraz/Shatsu/releases — the current experimental APK.
 
 The server stores rooms in memory, so free hosting restarts can delete rooms. For
 production quality, persistent room state, moderation, stability testing, a
 production signing key, and provider compliance review are still required.
+
+## Owner: enable hands-off hosting updates (one-time authorization)
+
+The Render service currently deploys successfully from a public Git repository URL,
+but Render requires an **authorized Git provider connection** to trigger future
+deploys automatically. Merely setting Auto-Deploy to On Commit is not enough
+for a public-URL source.
+
+1. In [Render Account Settings](https://dashboard.render.com/), open
+   **Account Settings → Git Deployment Credentials → Add credential → GitHub**
+   and authorize access to the **Katsuraz/Shatsu** repository.
+2. Open your [existing Shatsu service](https://dashboard.render.com/web/srv-dbnbv63rjlhs738c1nr0)
+   in Render. Go to **Settings → Build → Source → Edit** and choose **Katsuraz/Shatsu**
+   from your *connected Git provider*, not the public Git URL source.
+3. Keep branch **main**, runtime **Node**, build command `npm run check && npm test`,
+   start command `npm start`, and the free plan unless you decide otherwise.
+4. Under **Settings → Auto-Deploy**, select **On Commit** (or **After CI Checks Pass**).
+5. Confirm that the next GitHub push creates a Render deploy automatically.
+
+The Android GitHub Actions workflow already runs its APK build when Android
+source changes, publishes a versioned *alpha* release, and the app checks that
+release for updates when opened. **Android installation still requires a user
+confirmation**. Production signing and Play Store distribution remain future work.
