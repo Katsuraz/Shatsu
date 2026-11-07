@@ -76,3 +76,9 @@
 .audius-card small{max-width:400px;font-size:.74rem;color:#9e98b1}
 .audius-card audio{height:0;width:0;opacity:0;position:absolute;pointer-events:none}
 .discover-find-external{border:0;cursor:pointer;font-family:inherit}
+
+/* Native Android audio controls; only visible for supported audio players. */
+.background-audio-btn{border:1px solid #d5adff;background:#e0c6ff;color:#27123b;border-radius:14px;
+  padding:13px 20px;min-height:48px;font:800 .95rem inherit;cursor:pointer;max-width:100%;box-shadow:0 5px 18px #7c55be26}
+.background-audio-btn[hidden]{display:none!important}
+.background-audio-btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
