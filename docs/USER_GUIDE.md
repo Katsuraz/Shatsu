@@ -25,13 +25,21 @@ You can reopen it by tapping **? How to use** at the top, or **⋮ → How to us
 2. Your friend opens the link on their phone, enters their nickname and taps **Join room**.
 3. If their link doesn't open automatically, share the **room code** and they can use **Join a room** on Shatsu's home screen.
 
-## 4. Find a song inside Shatsu and keep the queue playing
+## 4. Search and play songs free — no Google Cloud setup
 
-1. Enter or join a room. Open **Music Library → Search song or artist**.
-2. Choose **YouTube** or **Spotify** as the provider and tap **Search**. You can also paste a YouTube/YouTube Music video link straight into this same field and tap **Play link** without a search API key.
-3. Tap **Play** on a result if you're the host. Guests see **+ Queue**, which adds a song for the host to play.
-4. For YouTube, the owner must configure a **YouTube Data API v3 key** once on the server for live search. If search is not yet configured, use **Have a song link? Paste it here instead**. Any song you select is saved to **Recently Played** on your own device, so next time you can pick it directly without a URL.
-5. Tap the player or **Tap to start listening** if your browser asks permission to play video/audio.
+**The easiest option is now Audius:**
+
+1. In your Shatsu room, scroll to **Music Library**.
+2. The provider will already say **Audius · Free**. Type a song title or artist name and tap **Search**.
+3. Tap **Play** (host) or **+ Queue** (friend). A real Audius track is selected for the whole room.
+4. On the first song, each phone may need one tap on **▶** or **Tap to start listening** due to Android/browser autoplay rules.
+5. **Auto Play** and **Auto Next** use the queue. You can invite friends as usual.
+
+**No Premium, API key, Google Cloud project or Audius account is required** for supported publicly streamable tracks. Audius has a different music library from Spotify/YouTube and emphasizes independent artists. Not every mainstream recording will be available. Some tracks may be unavailable or restricted by their artist.
+
+If your favorite song isn't on Audius, choose **YouTube · Links** and paste its public video link in the same box. This works without Google's API key too. **YouTube song-title search** still needs an official YouTube Data API key, but you don't need that for the Audius catalog.
+
+The optional Spotify source still uses the Spotify Web API, requires developer configuration and eligible playback accounts.
 
 ### Room controls
 
@@ -44,15 +52,15 @@ You can reopen it by tapping **? How to use** at the top, or **⋮ → How to us
 | **Auto Next** | When the host's YouTube player reaches the end, starts the next queued song (on by default) |
 | **Shuffle** | Randomizes which queued track plays next |
 | **Repeat Off / One / All** | Plays normally, repeats current song or rotates played songs back through the queue |
-| **Volume** | Adjusts the YouTube player on only your phone |
+| **Volume** | Adjusts your local Audius/YouTube playback volume |
 | **↻** | Resynchronizes your local player to the host timeline |
 
 **Auto Next uses tracks already in the queue; it does not invent recommended songs.**
-If the queue is empty, music stops unless Repeat is enabled. Spotify **automatic end detection is not implemented**; press Next manually for Spotify songs. Mobile browsers can block autoplay until every listener taps their player once.
+If the queue is empty, music stops unless Repeat is enabled. Auto Next also works for Audius tracks when the host's audio ends. Spotify **automatic end detection is not implemented**; press Next manually for Spotify songs. Mobile browsers can block autoplay until every listener taps their player once.
 
 Shatsu plays through official YouTube visible **video** embeds. It **does not** control the YouTube Music app directly, extract audio, bypass ads, or guarantee background playback with a locked screen. Not every YouTube video permits embedding.
 
-## 5. Spotify (optional, not plug-and-play yet)
+## 5. Spotify (optional, Premium and configuration needed)
 
 Spotify is more restricted. The owner must register Shatsu as a Spotify developer
 application and configure its public client ID on the hosting service.
@@ -84,9 +92,9 @@ signing is planned before a stable release.
 | Problem | What to do |
 | --- | --- |
 | "Shatsu is waking up" | The free server may be sleeping. Keep the app open, then tap **Try again**. |
-| YouTube search says not configured | The Shatsu server owner needs to add a YouTube Data API key on Render. Until then use Recent or paste a link. |\n| Blank page or YouTube video won't play | Use **Brave ↗**, check internet access, tap play on the video and try another embeddable link. |
+| YouTube search says not configured | Switch the service dropdown to **Audius · Free** for song-name search without any API key, or paste a YouTube video link. |\n| Blank page or YouTube video won't play | Use **Brave ↗**, check internet access, tap play on the video and try another embeddable link. |
 | Friend cannot join | Make sure both use the **same active room link/code**. Room state can disappear when the free server restarts. |
-| Music is behind | Tap **↻** on the slower phone. Precise, sample-perfect synchronization is not guaranteed. |
+| Audius search or audio fails | Check connectivity. Audius's public API or a particular artist's stream may be unavailable; try another track or a YouTube link. |\n| Music is behind | Tap **↻** on the slower phone. Precise, sample-perfect synchronization is not guaranteed. |
 | Spotify button won't connect | Open the room in **Brave**, not the Android WebView; a developer client ID, account eligibility and an active device are required. |
 | APK won't update | Download from **GitHub Releases** and, if necessary, remove the older debug app before installing. |
 
