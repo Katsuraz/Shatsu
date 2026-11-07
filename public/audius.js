@@ -9,6 +9,7 @@ export class AudiusRoomPlayer {
     this.onBlocked = onBlocked;
     this.onError = onError;
     this.trackId = null;
+    this.revision = null;
     this.lastErrorAt = 0;
     this.blockedAt = 0;
     this.endReportedTrack = null;
@@ -35,6 +36,7 @@ export class AudiusRoomPlayer {
     this.audio.removeAttribute('src');
     this.audio.load();
     this.trackId = null;
+    this.revision = null;
     this.endReportedTrack = null;
     this.endReportedRevision = null;
   }
@@ -45,6 +47,13 @@ export class AudiusRoomPlayer {
       return;
     }
     const changed = this.trackId !== pb.trackId;
+    const restarted = !changed && this.revision !== pb.revision && this.audio.ended && position < 3;
+    this.revision = pb.revision;
+    if (restarted) {
+      this.endReportedTrack = null;
+      this.endReportedRevision = null;
+      try { this.audio.currentTime = 0; } catch {}
+    }
     if (changed) {
       this.audio.pause();
       this.trackId = pb.trackId;
