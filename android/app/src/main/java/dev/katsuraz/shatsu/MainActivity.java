@@ -307,8 +307,9 @@ public final class MainActivity extends Activity {
                         return;
                     }
                 }
+                final String healthyUrl = url;
                 finishRequest(thisRequest, () -> {
-                    serverUrl = url;
+                    serverUrl = healthyUrl;
                     browser.loadUrl(serverUrl);
                 });
             } catch (Exception exception) {
