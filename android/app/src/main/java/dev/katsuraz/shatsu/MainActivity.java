@@ -140,8 +140,8 @@ public final class MainActivity extends Activity {
                 } catch (Exception ignored) { /* Do not share untrusted URLs. */ }
             }
 
-            @JavascriptInterface public boolean isBackgroundEnabled() {
-                return RoomPlaybackService.isRunning();
+            @JavascriptInterface public boolean isBackgroundEnabled(String code) {
+                return RoomPlaybackService.isRunningFor(code);
             }
 
             @JavascriptInterface public void startBackground(String code, String token, String participantId) {
