@@ -34,7 +34,7 @@ jobs:
       - name: Upload installable debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: Shatsu-v0.2.2-alpha-debug-APK
+          name: Shatsu-v0.3.0-alpha-debug-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
@@ -54,7 +54,7 @@ jobs:
           else
             gh release create "$TAG" "$APK" \
               --target "$GITHUB_SHA" \
-              --title "Shatsu ${TAG} — guided setup and automatic updates" \
-              --notes "Experimental Android debug APK. Automatic connection to the live Shatsu server, first-run user guide, native invite sharing and update notifications. Requires user permission to install; debug signing may change across builds. Spotify requires independent developer authorization and eligible accounts." \
+              --title "Shatsu ${TAG} — music library and autoplay controls" \
+              --notes "Experimental Android debug APK. Automatic connection to Shatsu, built-in YouTube/Spotify catalog search when providers are configured, queue, autoplay, auto next, shuffle, repeat, previous track and volume. Requires user permission to install; debug signing may change across builds. Spotify requires independent developer authorization and eligible accounts." \
               --prerelease
           fi
