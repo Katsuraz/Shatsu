@@ -101,6 +101,19 @@ export class SpotifyController {
     return response.json().catch(() => null);
   }
 
+  async searchTracks(q) {
+    if (!this.connected) throw new Error('Connect Spotify before searching.');
+    const query = String(q || '').trim();
+    if (query.length < 2 || query.length > 80) throw new Error('Search for 2–80 characters');
+    const data = await this.request('GET', '/search?type=track&limit=10&q=' + encodeURIComponent(query));
+    return (data?.tracks?.items || []).filter(item => /^[A-Za-z0-9]{22}$/.test(item?.id || '')).map(item => ({
+      provider: 'spotify', trackId: item.id,
+      title: String(item.name || 'Spotify track').slice(0, 100),
+      artist: (item.artists || []).map(artist => artist.name).join(', ').slice(0, 100),
+      image: item.album?.images?.find(image => /^https:\/\/i\.scdn\.co\//.test(image.url || ''))?.url || ''
+    }));
+  }
+
   async syncPlayback(pb, estimatedPosition, force = false) {
     if (!this.connected || pb?.provider !== 'spotify' || !pb.trackId || this.busy) return;
     if (Date.now() - this.lastSyncAt < (force ? 1500 : 8000)) return;
