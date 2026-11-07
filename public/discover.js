@@ -1,4 +1,5 @@
 import { detectSongLink, looksLikeLink } from './song-input.js';
+import { getLibrary } from './library.js';
 // In-app music discovery using official Audius, YouTube and Spotify APIs.
 // All track selections still flow through the host-authoritative Shatsu room.
 const $ = id => document.getElementById(id);
@@ -66,6 +67,37 @@ export function initDiscovery({ api, spotify, isHost, act, showToast, armPlaybac
         btn.disabled = false;
       });
       row.append(btn);
+      const fav = node('button', getLibrary().isFavorite(track) ? '♥' : '♡', 'discover-favorite');
+      fav.type = 'button';
+      fav.title = 'Save or remove from Liked Songs';
+      fav.setAttribute('aria-label', 'Toggle favorite for ' + track.title);
+      fav.addEventListener('click', () => {
+        try {
+          const saved = getLibrary().toggleFavorite(track);
+          fav.textContent = saved ? '♥' : '♡';
+          showToast(saved ? 'Saved to Liked Songs.' : 'Removed from Liked Songs.');
+        } catch (error) { showToast(error.message); }
+      });
+      row.append(fav);
+      const playlist = node('button', '＋', 'discover-favorite');
+      playlist.type = 'button';
+      playlist.title = 'Add song to playlist';
+      playlist.setAttribute('aria-label', 'Add ' + track.title + ' to a playlist');
+      playlist.addEventListener('click', () => {
+        const library = getLibrary();
+        if (!library.data.playlists.length) return showToast('Create a playlist in Your Library first.');
+        const choice = window.prompt('Choose playlist number:\n' +
+          library.data.playlists.map((p, i) => (i + 1) + '. ' + p.name).join('\n'), '1');
+        if (choice === null) return;
+        const index = Number(choice) - 1;
+        const target = library.data.playlists[index];
+        if (!Number.isInteger(index) || !target) return showToast('Choose a valid playlist number.');
+        try {
+          const added = library.addToPlaylist(target.id, track);
+          showToast(added ? 'Added to ' + target.name : 'Already saved in this playlist.');
+        } catch (error) { showToast(error.message); }
+      });
+      row.append(playlist);
       results.append(row);
     }
   }
