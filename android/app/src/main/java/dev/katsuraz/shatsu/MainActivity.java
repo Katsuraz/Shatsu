@@ -50,7 +50,7 @@ public final class MainActivity extends Activity {
         "https://raw.githubusercontent.com/Katsuraz/Shatsu/main/config/server.json";
     private static final String DEFAULT_SERVER = "https://shatsu.onrender.com";
     private static final String RELEASES_API = "https://api.github.com/repos/Katsuraz/Shatsu/releases?per_page=5";
-    private static final String APP_VERSION = "0.4.0-alpha";
+    private static final String APP_VERSION = "0.4.1-alpha";
     private static final int BG = Color.rgb(14, 13, 22);
     private static final int TEXT = Color.rgb(242, 235, 255);
     private static final int MUTED = Color.rgb(190, 180, 203);
@@ -117,7 +117,7 @@ public final class MainActivity extends Activity {
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         settings.setJavaScriptCanOpenWindowsAutomatically(false);
-        settings.setUserAgentString(settings.getUserAgentString() + " ShatsuAndroid/0.4.0");
+        settings.setUserAgentString(settings.getUserAgentString() + " ShatsuAndroid/0.4.1");
         browser.setBackgroundColor(BG);
         browser.setVisibility(View.INVISIBLE);
         // The bridge exposes only a validated, user-initiated Android share action.
@@ -435,7 +435,7 @@ public final class MainActivity extends Activity {
 
     private void showMenu() {
         new AlertDialog.Builder(this).setTitle("Shatsu")
-            .setItems(new String[]{"How to use Shatsu", "Reconnect automatically", "Open in Brave",
+            .setItems(new String[]{"How to use Shatsu", "My Library", "Reconnect automatically", "Open in Brave",
                 "Check for updates", "Advanced: custom server", "Use automatic connection", "About"}, (d, which) -> {
                 switch (which) {
                     case 0:
@@ -443,21 +443,33 @@ public final class MainActivity extends Activity {
                             browser.evaluateJavascript("window.ShatsuGuide && window.ShatsuGuide.open()", null);
                         else openExternal(DEFAULT_SERVER + "/?guide=1");
                         break;
-                    case 1: connectAutomatically(); break;
-                    case 2: openExternal(serverUrl == null ? DEFAULT_SERVER : serverUrl); break;
-                    case 3: checkForUpdates(true); break;
-                    case 4: showServerDialog(); break;
-                    case 5:
+                    case 1:
+                        if (browser.getVisibility() == View.VISIBLE) {
+                            browser.evaluateJavascript(
+                                "(function(){var library=document.getElementById('library-panel');"
+                                + "if(library&&library.offsetParent!==null){library.scrollIntoView({behavior:'smooth',block:'start'});return 'ok';}"
+                                + "return 'room';})()",
+                                value -> { if (!"\"ok\"".equals(value))
+                                    Toast.makeText(this, "Create or join a room to open Your Library.", Toast.LENGTH_LONG).show(); });
+                        } else {
+                            Toast.makeText(this, "Connect to Shatsu and enter a room first.", Toast.LENGTH_LONG).show();
+                        }
+                        break;
+                    case 2: connectAutomatically(); break;
+                    case 3: openExternal(serverUrl == null ? DEFAULT_SERVER : serverUrl); break;
+                    case 4: checkForUpdates(true); break;
+                    case 5: showServerDialog(); break;
+                    case 6:
                         getPreferences(MODE_PRIVATE).edit().remove(OVERRIDE).apply();
                         serverUrl = null;
                         connectAutomatically();
                         break;
-                    case 6:
+                    case 7:
                         new AlertDialog.Builder(this).setTitle("Shatsu v" + APP_VERSION)
-                            .setMessage("Shatsu connects to the online listening service automatically. "
-                                + "Use the built-in guide for rooms, invites, songs and synchronization. "
-                                + "Spotify requires eligible Premium accounts and separate developer authorization. "
-                                + "Android app updates require your permission to install.")
+                            .setMessage("Shatsu automatically connects to its listening service. "
+                                + "Your Library includes Liked Songs, playlists and local backups. "
+                                + "Spotify controls still require developer authorization and eligible accounts. "
+                                + "Android must approve installation of app updates.")
                             .setPositiveButton("OK", null).show(); break;
                     default: break;
                 }
