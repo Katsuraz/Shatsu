@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Build;
 import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
@@ -49,7 +50,7 @@ public final class MainActivity extends Activity {
         "https://raw.githubusercontent.com/Katsuraz/Shatsu/main/config/server.json";
     private static final String DEFAULT_SERVER = "https://shatsu.onrender.com";
     private static final String RELEASES_API = "https://api.github.com/repos/Katsuraz/Shatsu/releases?per_page=5";
-    private static final String APP_VERSION = "0.3.2-alpha";
+    private static final String APP_VERSION = "0.4.0-alpha";
     private static final int BG = Color.rgb(14, 13, 22);
     private static final int TEXT = Color.rgb(242, 235, 255);
     private static final int MUTED = Color.rgb(190, 180, 203);
@@ -116,7 +117,7 @@ public final class MainActivity extends Activity {
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         settings.setJavaScriptCanOpenWindowsAutomatically(false);
-        settings.setUserAgentString(settings.getUserAgentString() + " ShatsuAndroid/0.3.2");
+        settings.setUserAgentString(settings.getUserAgentString() + " ShatsuAndroid/0.4.0");
         browser.setBackgroundColor(BG);
         browser.setVisibility(View.INVISIBLE);
         // The bridge exposes only a validated, user-initiated Android share action.
@@ -137,6 +138,58 @@ public final class MainActivity extends Activity {
                         startActivity(Intent.createChooser(share, "Invite your friends"));
                     });
                 } catch (Exception ignored) { /* Do not share untrusted URLs. */ }
+            }
+
+            @JavascriptInterface public boolean isBackgroundEnabled() {
+                return RoomPlaybackService.isRunning();
+            }
+
+            @JavascriptInterface public void startBackground(String code, String token, String participantId) {
+                if (code == null || !code.matches("[A-Z2-9]{8}")
+                    || token == null || !token.matches("[0-9a-f]{48}")
+                    || participantId == null || !participantId.matches("[a-fA-F0-9-]{36}"))
+                    return;
+                final String activeServer = serverUrl;
+                if (activeServer == null || !activeServer.startsWith("https://")) return;
+                runOnUiThread(() -> {
+                    if (destroyed || isFinishing()) return;
+                    Runnable start = () -> {
+                        Intent foreground = new Intent(MainActivity.this, RoomPlaybackService.class);
+                        foreground.setAction(RoomPlaybackService.ACTION_START);
+                        foreground.putExtra("server", activeServer);
+                        foreground.putExtra("code", code);
+                        foreground.putExtra("token", token);
+                        foreground.putExtra("participantId", participantId);
+                        try {
+                            if (Build.VERSION.SDK_INT >= 26) startForegroundService(foreground);
+                            else startService(foreground);
+                            browser.evaluateJavascript("window.dispatchEvent(new Event('shatsu:nativebackgroundstarted'))", null);
+                        } catch (Exception error) {
+                            Toast.makeText(MainActivity.this, "Background audio could not start.", Toast.LENGTH_LONG).show();
+                        }
+                    };
+                    if (getPreferences(MODE_PRIVATE).getBoolean("background_audio_allowed", false)) {
+                        start.run();
+                    } else {
+                        new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("Keep Shatsu playing?")
+                            .setMessage("Shatsu can keep supported Audius music playing while your screen is locked or the app is minimized, using an Android media notification. YouTube embeds cannot play in the background.")
+                            .setPositiveButton("Enable", (dialog, which) -> {
+                                getPreferences(MODE_PRIVATE).edit().putBoolean("background_audio_allowed", true).apply();
+                                start.run();
+                            })
+                            .setNegativeButton("Not now", null).show();
+                    }
+                });
+            }
+
+            @JavascriptInterface public void stopBackground() {
+                runOnUiThread(() -> {
+                    Intent stop = new Intent(MainActivity.this, RoomPlaybackService.class);
+                    stop.setAction(RoomPlaybackService.ACTION_STOP);
+                    try { startService(stop); } catch (Exception ignored) {}
+                    browser.evaluateJavascript("window.dispatchEvent(new Event('shatsu:nativebackgroundstopped'))", null);
+                });
             }
         }, "ShatsuAndroid");
         WebView.setWebContentsDebuggingEnabled(
