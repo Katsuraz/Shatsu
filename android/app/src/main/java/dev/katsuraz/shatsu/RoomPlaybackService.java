@@ -155,10 +155,9 @@ public final class RoomPlaybackService extends Service {
         }
         builder.addAction(new Notification.Action.Builder(android.R.drawable.ic_menu_close_clear_cancel,
             "Stop", command(ACTION_STOP, 3)).build());
-        int compactSecond = host ? 1 : 1;
         builder.setStyle(new Notification.MediaStyle()
             .setMediaSession(session.getSessionToken())
-            .setShowActionsInCompactView(0, compactSecond));
+            .setShowActionsInCompactView(0, 1));
         return builder.build();
     }
 
@@ -307,6 +306,7 @@ public final class RoomPlaybackService extends Service {
 
     private void prepareTrack(String id) {
         clearPlayer();
+        currentTrack = id;
         prepared = false;
         try {
             MediaPlayer created = new MediaPlayer();
