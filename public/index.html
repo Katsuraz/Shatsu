@@ -59,15 +59,15 @@
         <section class="discover-panel" aria-label="Choose music">
           <div class="discover-header"><div><span class="eyebrow small">MUSIC LIBRARY</span><h2>Find your next song</h2></div><span class="chip subdued">SEARCH & QUEUE</span></div>
           <form id="discover-form" class="discover-form">
-            <label class="sr-only" for="discover-query">Song or artist</label>
-            <input id="discover-query" type="search" minlength="2" maxlength="80" placeholder="Search song or artist..." aria-label="Search songs" required>
+            <label class="sr-only" for="discover-query">Song, artist, or song link</label>
+            <input id="discover-query" type="search" minlength="2" maxlength="2048" placeholder="Search a song or paste a link..." aria-label="Search a song or paste a YouTube or Spotify link" spellcheck="false" required>
             <label class="sr-only" for="discover-provider">Music service</label>
             <select id="discover-provider" aria-label="Music service"><option value="youtube">YouTube</option><option value="spotify">Spotify</option></select>
             <button type="submit" class="primary-btn">Search</button>
           </form>
           <div id="discover-results" class="discover-results" aria-live="polite"></div>
-          <p id="discover-help" class="discover-help">Search a song by name or choose a recent track. Official catalog access is required.</p>
-          <details class="link-fallback"><summary>Have a song link? Paste it here instead</summary>
+          <p id="discover-help" class="discover-help">Pasted YouTube and Spotify track links work immediately. Song-name search needs a connected catalog.</p>
+          <details class="link-fallback"><summary>Optional: separate link field</summary>
             <form id="add-form" class="add-song"><div class="add-input"><span class="link-icon">↗</span><input id="video-url" type="url" placeholder="Paste Spotify, YouTube or YouTube Music link..." required aria-label="YouTube link"></div><button class="primary-btn" id="add-btn" type="submit">Play now</button></form>
           </details>
         </section>
