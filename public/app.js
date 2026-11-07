@@ -15,7 +15,7 @@ const dom = {
   seek: $('seek'), position: $('position'), duration: $('duration'), syncText: $('sync-text'),
   queue: $('queue-list'), queueCount: $('queue-count'), chat: $('messages'), chatForm: $('chat-form'), chatText: $('chat-text'),
   leave: $('leave-btn'), toast: $('toast'), spotifyCard: $('spotify-card'), spotifyLink: $('spotify-open'), spotifyConnect: $('spotify-connect'), spotifyStatus: $('spotify-status'), providerLabel: $('provider-label'),
-  audiusCard: $('audius-card'), audiusAudio: $('audius-audio'), nativeBackgroundBtn: $('native-background-btn'), nativeBackgroundNote: $('native-background-note')
+  audiusCard: $('audius-card'), audiusAudio: $('audius-audio'), nativeBackgroundBtn: $('native-background-btn'), nativeBackgroundNote: $('native-background-note'), externalYoutube: $('open-original-youtube')
 };
 let mode = 'create', credentials = null, state = null, events = null;
 let player = null, playerReady = false, youtubeReady = false, playerVideo = null;
@@ -170,6 +170,9 @@ function receiveState(next) {
   const isSpotify = state.playback.provider === 'spotify';
   const isAudius = state.playback.provider === 'audius';
   dom.providerLabel.textContent = isSpotify ? 'Spotify' : isAudius ? 'Audius' : 'YouTube';
+  const hasYouTubeVideo = state.playback.provider === 'youtube' && /^[A-Za-z0-9_-]{11}$/.test(state.playback.videoId || '');
+  dom.externalYoutube.hidden = !hasYouTubeVideo;
+  if (hasYouTubeVideo) dom.externalYoutube.href = 'https://www.youtube.com/watch?v=' + encodeURIComponent(state.playback.videoId);
   dom.spotifyCard.hidden = !isSpotify;
   dom.audiusCard.hidden = !isAudius;
   const ytNode = $('youtube-player'); if (ytNode) ytNode.hidden = isSpotify || isAudius;
