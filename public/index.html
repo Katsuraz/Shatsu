@@ -41,7 +41,13 @@
         <div class="room-header"><div><div class="eyebrow small">YOU'RE LISTENING IN</div><h1>Good vibes only<span class="brand-dot">.</span></h1></div><span class="live-chip"><span class="status-dot"></span> LIVE ROOM</span></div>
         <div class="player-card">
           <div class="player-top"><span id="track-label">NO TRACK SELECTED</span><span class="provider"><span class="provider-play">▶</span> <span id="provider-label">YouTube</span></span></div>
-          <div class="video-area" id="video-area"><div class="empty-player" id="player-placeholder"><div class="empty-disc">♫</div><strong>Ready when you are.</strong><span>Choose a track below to listen together.</span></div><div id="youtube-player"></div><div class="spotify-card" id="spotify-card" hidden><div class="spotify-mark">♫</div><strong>Spotify listening</strong><p>This track plays in your own Spotify app. Connect your account below and start Spotify to activate your device.</p><a id="spotify-open" href="https://open.spotify.com/" rel="noopener noreferrer" target="_blank">Open track in Spotify ↗</a></div></div>
+          <div class="video-area" id="video-area"><div class="empty-player" id="player-placeholder"><div class="empty-disc">♫</div><strong>Ready when you are.</strong><span>Choose a track below to listen together.</span></div><div id="youtube-player"></div><div class="audius-card" id="audius-card" hidden>
+  <div class="audius-artwork">♫</div>
+  <strong>Listening on Audius</strong>
+  <p>Independent music streamed from the artist's Audius track. No Premium, Google API key or Spotify login needed.</p>
+  <audio id="audius-audio" preload="metadata" aria-label="Audius song playback"></audio>
+  <small>Press ▶ in Shatsu to play. The room stays synchronized with your friends.</small>
+</div><div class="spotify-card" id="spotify-card" hidden><div class="spotify-mark">♫</div><strong>Spotify listening</strong><p>This track plays in your own Spotify app. Connect your account below and start Spotify to activate your device.</p><a id="spotify-open" href="https://open.spotify.com/" rel="noopener noreferrer" target="_blank">Open track in Spotify ↗</a></div></div>
           <div class="now-playing"><div class="song-disc">♫</div><div class="song-info"><div class="eyebrow small">NOW PLAYING</div><strong id="current-title">Your shared soundtrack</strong><span id="track-subtitle">Waiting for the first song</span></div></div>
           <div class="timeline"><span id="position">0:00</span><input id="seek" type="range" min="0" max="100" value="0" aria-label="Seek position"><span id="duration">0:00</span></div>
           <div class="transport"><button id="previous-btn" class="icon-btn" title="Previous song" aria-label="Previous song">⏮</button><button id="sync-btn" class="icon-btn" title="Catch up with the host" aria-label="Catch up with the host">↻</button><button id="toggle-btn" class="play-btn" aria-label="Play or pause">▶</button><button id="next-btn" class="icon-btn" title="Next in queue" aria-label="Next in queue">⏭</button></div>
@@ -57,16 +63,20 @@
           <button class="enable-audio" id="enable-audio" hidden>▶ Tap to start listening</button>
         </div>
         <section class="discover-panel" aria-label="Choose music">
-          <div class="discover-header"><div><span class="eyebrow small">MUSIC LIBRARY</span><h2>Find your next song</h2></div><span class="chip subdued">SEARCH & QUEUE</span></div>
+          <div class="discover-header"><div><span class="eyebrow small">MUSIC LIBRARY</span><h2>Find your next song</h2></div><span class="chip subdued">NO ACCOUNT NEEDED</span></div>
           <form id="discover-form" class="discover-form">
             <label class="sr-only" for="discover-query">Song, artist, or song link</label>
             <input id="discover-query" type="search" minlength="2" maxlength="2048" placeholder="Search a song or paste a link..." aria-label="Search a song or paste a YouTube or Spotify link" spellcheck="false" required>
             <label class="sr-only" for="discover-provider">Music service</label>
-            <select id="discover-provider" aria-label="Music service"><option value="youtube">YouTube</option><option value="spotify">Spotify</option></select>
+            <select id="discover-provider" aria-label="Music service">
+  <option value="audius" selected>Audius · Free</option>
+  <option value="youtube">YouTube · Links</option>
+  <option value="spotify">Spotify · Premium</option>
+</select>
             <button type="submit" class="primary-btn">Search</button>
           </form>
           <div id="discover-results" class="discover-results" aria-live="polite"></div>
-          <p id="discover-help" class="discover-help">Pasted YouTube and Spotify track links work immediately. Song-name search needs a connected catalog.</p>
+          <p id="discover-help" class="discover-help">Search real Audius songs for free without any setup. YouTube and Spotify links still work.</p>
           <details class="link-fallback"><summary>Optional: separate link field</summary>
             <form id="add-form" class="add-song"><div class="add-input"><span class="link-icon">↗</span><input id="video-url" type="url" placeholder="Paste Spotify, YouTube or YouTube Music link..." required aria-label="YouTube link"></div><button class="primary-btn" id="add-btn" type="submit">Play now</button></form>
           </details>
@@ -81,7 +91,7 @@
         <button id="leave-btn" class="leave-btn">← Leave room</button>
       </aside>
     </main>
-    <footer class="footer"><span>shatsu · v0.3.1 alpha</span><span>listen closer, even from afar ♡</span></footer>
+    <footer class="footer"><span>shatsu · v0.3.2 alpha</span><span>listen closer, even from afar ♡</span></footer>
   </div>
   <dialog class="guide-dialog" id="guide-dialog" aria-labelledby="guide-title">
     <div class="guide-heading"><span class="eyebrow">SHATSU STARTER GUIDE</span><button type="button" class="guide-close" data-close-guide aria-label="Close guide">✕</button></div>
