@@ -82,3 +82,8 @@
   padding:13px 20px;min-height:48px;font-size:.95rem;font-weight:800;font-family:inherit;cursor:pointer;max-width:100%;box-shadow:0 5px 18px #7c55be26}
 .background-audio-btn[hidden]{display:none!important}
 .background-audio-btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
+
+.external-song-link{display:block;margin:12px 0 6px;padding:10px 12px;border-radius:12px;
+background:rgba(198,163,254,.10);border:1px solid rgba(198,163,254,.26);
+color:#dac9fa;text-align:center;text-decoration:none;font-size:.82rem;font-weight:700}
+.external-song-link[hidden]{display:none!important}
