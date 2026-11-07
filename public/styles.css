@@ -79,6 +79,6 @@
 
 /* Native Android audio controls; only visible for supported audio players. */
 .background-audio-btn{border:1px solid #d5adff;background:#e0c6ff;color:#27123b;border-radius:14px;
-  padding:13px 20px;min-height:48px;font:800 .95rem inherit;cursor:pointer;max-width:100%;box-shadow:0 5px 18px #7c55be26}
+  padding:13px 20px;min-height:48px;font-size:.95rem;font-weight:800;font-family:inherit;cursor:pointer;max-width:100%;box-shadow:0 5px 18px #7c55be26}
 .background-audio-btn[hidden]{display:none!important}
 .background-audio-btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
