@@ -3,6 +3,7 @@ import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { HttpError, RoomStore } from './lib/rooms.js';
+import { searchYoutube } from './lib/catalog.js';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
@@ -19,7 +20,7 @@ async function body(req) {
   try { return JSON.parse(text); } catch { throw new HttpError(400, 'Invalid JSON'); }
 }
 
-export function createShatsuServer({ store = new RoomStore() } = {}) {
+export function createShatsuServer({ store = new RoomStore(), searchCatalog = searchYoutube } = {}) {
   const server = http.createServer(async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -30,6 +31,12 @@ export function createShatsuServer({ store = new RoomStore() } = {}) {
       if (url.pathname === '/api/health' && req.method === 'GET') return respond(res, 200, { ok: true, name: 'Shatsu', version: '0.2.0' });
       if (url.pathname === '/api/config' && req.method === 'GET') return respond(res, 200, { spotifyClientId: process.env.SHATSU_SPOTIFY_CLIENT_ID || '' });
       if (url.pathname === '/api/time' && req.method === 'GET') return respond(res, 200, { serverNow: Date.now() });
+      if (url.pathname === '/api/search' && req.method === 'GET') {
+        const provider = url.searchParams.get('provider') || 'youtube';
+        if (provider !== 'youtube') throw new HttpError(400, 'Use Spotify sign-in for Spotify search');
+        const tracks = await searchCatalog(url.searchParams.get('q') || '');
+        return respond(res, 200, { tracks });
+      }
       if (url.pathname === '/api/rooms' && req.method === 'POST') {
         const data = await body(req); return respond(res, 201, store.create(data.name));
       }
