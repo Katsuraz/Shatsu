@@ -20,11 +20,24 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import org.json.JSONObject;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 
 /** Shatsu Android companion: web room UI + supported YouTube embeds; Spotify sign-in uses external Brave. */
 public final class MainActivity extends Activity {
     private static final String PREFS = "shatsu_prefs";
     private static final String SERVER = "server_url";
+    private static final String CONFIG_URL = "https://raw.githubusercontent.com/Katsuraz/Shatsu/main/config/server.json";
+    private static final String HOSTING_URL = "https://render.com/deploy?repo=https://github.com/Katsuraz/Shatsu";
+    private LinearLayout setupPanel;
+    private TextView setupTitle, setupMessage;
+    private Button setupRetry, setupHost;
+    private boolean pageFailed = false;
+    private int connectionAttempt = 0;
     private WebView browser;
     private String serverUrl;
     private View customView;
@@ -62,7 +75,7 @@ public final class MainActivity extends Activity {
         browser = new WebView(this);
         WebSettings settings = browser.getSettings();
         settings.setJavaScriptEnabled(true);
-        settings.setUserAgentString(settings.getUserAgentString() + " ShatsuAndroid/0.2.0");
+        settings.setUserAgentString(settings.getUserAgentString() + " ShatsuAndroid/0.2.1");
         settings.setDomStorageEnabled(true);
         settings.setMediaPlaybackRequiresUserGesture(true);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
@@ -81,6 +94,18 @@ public final class MainActivity extends Activity {
                     Toast.makeText(MainActivity.this, "Spotify authorization continues in your browser; keep listening there after sign-in.", Toast.LENGTH_LONG).show();
                 return true;
             }
+            @Override public void onPageFinished(WebView view, String url) {
+                if (!pageFailed) {
+                    if (setupPanel != null) setupPanel.setVisibility(View.GONE);
+                    browser.setVisibility(View.VISIBLE);
+                }
+            }
+            @Override public void onReceivedError(WebView view, WebResourceRequest request, android.webkit.WebResourceError error) {
+                if (request.isForMainFrame()) {
+                    pageFailed = true;
+                    showSetup("Can't open Shatsu", "The listening server may be sleeping. Tap Try again.", false);
+                }
+            }
         });
         browser.setWebChromeClient(new WebChromeClient() {
             @Override public void onShowCustomView(View view, CustomViewCallback callback) {
@@ -94,9 +119,113 @@ public final class MainActivity extends Activity {
             @Override public void onHideCustomView() { closeFullScreen(); }
         });
         root.addView(browser, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+        makeSetupPanel();
+        browser.setVisibility(View.GONE);
         serverUrl = getPreferences(MODE_PRIVATE).getString(SERVER, "");
-        if (serverUrl.isEmpty()) showServerDialog(false);
-        else browser.loadUrl(serverUrl);
+        if (serverUrl.isEmpty()) connectAutomatically();
+        else loadServer(serverUrl);
+    }
+
+
+    private void makeSetupPanel() {
+        setupPanel = new LinearLayout(this);
+        setupPanel.setOrientation(LinearLayout.VERTICAL);
+        setupPanel.setGravity(Gravity.CENTER);
+        setupPanel.setPadding(dp(22), dp(26), dp(22), dp(26));
+        setupPanel.setBackgroundColor(Color.rgb(14, 13, 22));
+        TextView icon = new TextView(this);
+        icon.setText("♫");
+        icon.setTextColor(Color.rgb(204, 171, 255));
+        icon.setTextSize(52);
+        icon.setGravity(Gravity.CENTER);
+        setupPanel.addView(icon);
+        setupTitle = new TextView(this);
+        setupTitle.setTextColor(Color.WHITE);
+        setupTitle.setTextSize(23);
+        setupTitle.setTypeface(null, 1);
+        setupTitle.setGravity(Gravity.CENTER);
+        setupPanel.addView(setupTitle);
+        setupMessage = new TextView(this);
+        setupMessage.setTextColor(Color.rgb(197, 187, 208));
+        setupMessage.setTextSize(16);
+        setupMessage.setGravity(Gravity.CENTER);
+        setupMessage.setPadding(0, dp(16), 0, dp(24));
+        setupPanel.addView(setupMessage);
+        setupRetry = smallButton("Try again", v -> connectAutomatically());
+        setupRetry.setTextSize(17);
+        setupPanel.addView(setupRetry, new LinearLayout.LayoutParams(-1, dp(56)));
+        setupHost = smallButton("Set up hosting", v -> openExternal(HOSTING_URL));
+        setupPanel.addView(setupHost, new LinearLayout.LayoutParams(-1, dp(56)));
+        root.addView(setupPanel, new LinearLayout.LayoutParams(-1, 0, 1f));
+    }
+
+    private void showSetup(String title, String message, boolean connecting) {
+        if (setupPanel == null) return;
+        browser.setVisibility(View.GONE);
+        setupPanel.setVisibility(View.VISIBLE);
+        setupTitle.setText(title);
+        setupMessage.setText(message);
+        setupRetry.setVisibility(connecting ? View.GONE : View.VISIBLE);
+        setupHost.setVisibility(connecting ? View.GONE : View.VISIBLE);
+    }
+
+    private void connectAutomatically() {
+        final int attempt = ++connectionAttempt;
+        showSetup("Connecting automatically…", "Finding your listening space. You don't need to type a server address.", true);
+        new Thread(() -> {
+            try {
+                JSONObject config = new JSONObject(readJson(CONFIG_URL));
+                String candidate = config.optString("serverUrl", "");
+                Uri endpoint = Uri.parse(candidate);
+                String authority = endpoint.getEncodedAuthority();
+                if (!"https".equalsIgnoreCase(endpoint.getScheme()) || endpoint.getHost() == null ||
+                    authority == null || authority.contains("@") ||
+                    endpoint.getQuery() != null || endpoint.getFragment() != null ||
+                    (endpoint.getPath() != null && !endpoint.getPath().isEmpty() && !"/".equals(endpoint.getPath()))) {
+                    runOnUiThread(() -> {
+                        if (attempt == connectionAttempt) showSetup("Shatsu isn't online yet",
+                            "The app is ready, but the owner needs to activate its cloud server once. After that, Shatsu will connect automatically.", false);
+                    });
+                    return;
+                }
+                String url = "https://" + authority;
+                JSONObject health = new JSONObject(readJson(url + "/api/health"));
+                if (!health.optBoolean("ok", false) || !"Shatsu".equals(health.optString("name")))
+                    throw new IllegalStateException("Shatsu server unavailable");
+                runOnUiThread(() -> { if (attempt == connectionAttempt) loadServer(url); });
+            } catch (Exception err) {
+                runOnUiThread(() -> {
+                    if (attempt == connectionAttempt) showSetup("Connection unavailable",
+                        "Check your internet connection and tap Try again. Hosting may not be ready yet.", false);
+                });
+            }
+        }, "shatsu-cloud").start();
+    }
+
+    private String readJson(String url) throws Exception {
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(8000);
+        connection.setReadTimeout(8000);
+        connection.setRequestProperty("Accept", "application/json");
+        try {
+            if (connection.getResponseCode() != 200) throw new IllegalStateException("Bad response");
+            try (InputStream input = connection.getInputStream(); ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+                byte[] chunk = new byte[512];
+                int n;
+                while ((n = input.read(chunk)) != -1) {
+                    if (output.size() + n > 4096) throw new IllegalStateException("Response too large");
+                    output.write(chunk, 0, n);
+                }
+                return output.toString(StandardCharsets.UTF_8.name());
+            }
+        } finally { connection.disconnect(); }
+    }
+
+    private void loadServer(String url) {
+        serverUrl = url;
+        pageFailed = false;
+        showSetup("Opening Shatsu…", "Your listening room is getting ready.", true);
+        browser.loadUrl(url);
     }
 
     private Button smallButton(String label, View.OnClickListener listener) {
@@ -111,13 +240,18 @@ public final class MainActivity extends Activity {
 
     private void showMenu() {
         new AlertDialog.Builder(this).setTitle("Shatsu")
-            .setItems(new String[]{ "Change server address", "Open Shatsu in Brave", "Reload", "About" }, (d, which) -> {
+            .setItems(new String[]{ "Reconnect automatically", "Open Shatsu in Brave", "Reload", "Advanced: custom server", "About" }, (d, which) -> {
                 switch (which) {
-                    case 0: showServerDialog(true); break;
+                    case 0:
+                        getPreferences(MODE_PRIVATE).edit().remove(SERVER).apply();
+                        serverUrl = null;
+                        connectAutomatically();
+                        break;
                     case 1: openExternal(serverUrl); break;
                     case 2: if (serverUrl != null && !serverUrl.isEmpty()) browser.reload(); break;
-                    case 3: new AlertDialog.Builder(this).setTitle("Shatsu v0.2.0 alpha")
-                            .setMessage("Your own Shatsu server is required. YouTube rooms work in the embedded browser where supported. For Spotify sign-in, use Brave or another full browser. Spotify Premium and developer configuration are required.")
+                    case 3: showServerDialog(true); break;
+                    case 4: new AlertDialog.Builder(this).setTitle("Shatsu v0.2.1 alpha")
+                            .setMessage("Shatsu automatically connects to the cloud server published by its owner. Cloud hosting must be activated once. For Spotify sign-in, use Brave. Spotify Premium and developer authorization are required.")
                             .setPositiveButton("OK", null).show(); break;
                     default: break;
                 }
@@ -155,7 +289,7 @@ public final class MainActivity extends Activity {
             }
             serverUrl = uri.getScheme() + "://" + uri.getAuthority();
             getPreferences(MODE_PRIVATE).edit().putString(SERVER, serverUrl).apply();
-            browser.loadUrl(serverUrl);
+            loadServer(serverUrl);
             dialog.dismiss();
         }));
         dialog.show();
@@ -174,7 +308,10 @@ public final class MainActivity extends Activity {
     }
 
     private void openExternal(String url) {
-        if (url == null || url.isEmpty()) { showServerDialog(false); return; }
+        if (url == null || url.isEmpty()) {
+            Toast.makeText(this, "Shatsu is not online yet", Toast.LENGTH_LONG).show();
+            return;
+        }
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
         intent.addCategory(Intent.CATEGORY_BROWSABLE);
         intent.setPackage("com.brave.browser");
