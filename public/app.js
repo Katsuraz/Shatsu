@@ -426,6 +426,25 @@ if (dom.nativeBackgroundBtn) {
     updateBackgroundUI();
     showToast('Android background audio enabled. You can lock your screen.');
   });
+  const refreshBackgroundMode = () => {
+    if (!credentials || !nativeAudioAvailable || state?.playback?.provider !== 'audius') return;
+    try {
+      const actuallyRunning = Boolean(window.ShatsuAndroid.isBackgroundEnabled(credentials.code));
+      if (nativeBackground && !actuallyRunning) {
+        nativeBackground = false;
+        userEnabledPlayback = false;
+        dom.start.hidden = false;
+      } else if (!nativeBackground && actuallyRunning) {
+        nativeBackground = true;
+        audiusPlayer.reset();
+      }
+      updateBackgroundUI();
+    } catch { /* Browser-only mode. */ }
+  };
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) refreshBackgroundMode();
+  });
+  window.addEventListener('focus', refreshBackgroundMode);
   window.addEventListener('shatsu:nativebackgroundstopped', () => {
     nativeBackground = false;
     userEnabledPlayback = false;
