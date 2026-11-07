@@ -48,7 +48,9 @@ public final class RoomPlaybackService extends Service {
     private static final int NOTIFICATION_ID = 4202;
 
     private static volatile boolean running = false;
+    private static volatile String activeRoomCode = "";
     public static boolean isRunning() { return running; }
+    public static boolean isRunningFor(String code) { return running && code != null && code.equals(activeRoomCode); }
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
@@ -120,6 +122,7 @@ public final class RoomPlaybackService extends Service {
         localPaused = false;
         startAsForeground();
         running = true;
+        activeRoomCode = code;
         if (!started) {
             started = true;
             executor.scheduleWithFixedDelay(() -> {
@@ -366,6 +369,7 @@ public final class RoomPlaybackService extends Service {
 
     @Override public void onDestroy() {
         running = false;
+        activeRoomCode = "";
         dead = true;
         executor.shutdownNow();
         clearPlayer();
