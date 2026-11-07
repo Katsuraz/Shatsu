@@ -46,7 +46,8 @@
   <strong>Listening on Audius</strong>
   <p>Independent music streamed from the artist's Audius track. No Premium, Google API key or Spotify login needed.</p>
   <audio id="audius-audio" preload="metadata" aria-label="Audius song playback"></audio>
-  <small>Press ▶ in Shatsu to play. The room stays synchronized with your friends.</small>
+  <button id="native-background-btn" type="button" class="background-audio-btn" hidden>🎧 Play in background</button>
+  <small id="native-background-note">On Android, enable background audio to listen with the screen locked. YouTube playback stays in the official visible player.</small>
 </div><div class="spotify-card" id="spotify-card" hidden><div class="spotify-mark">♫</div><strong>Spotify listening</strong><p>This track plays in your own Spotify app. Connect your account below and start Spotify to activate your device.</p><a id="spotify-open" href="https://open.spotify.com/" rel="noopener noreferrer" target="_blank">Open track in Spotify ↗</a></div></div>
           <div class="now-playing"><div class="song-disc">♫</div><div class="song-info"><div class="eyebrow small">NOW PLAYING</div><strong id="current-title">Your shared soundtrack</strong><span id="track-subtitle">Waiting for the first song</span></div></div>
           <div class="timeline"><span id="position">0:00</span><input id="seek" type="range" min="0" max="100" value="0" aria-label="Seek position"><span id="duration">0:00</span></div>
@@ -76,7 +77,7 @@
             <button type="submit" class="primary-btn">Search</button>
           </form>
           <div id="discover-results" class="discover-results" aria-live="polite"></div>
-          <p id="discover-help" class="discover-help">Search real Audius songs for free without any setup. YouTube and Spotify links still work.</p>
+          <p id="discover-help" class="discover-help">Search free Audius songs, or use YouTube/Spotify links. Background audio requires a supported source.</p>
           <details class="link-fallback"><summary>Optional: separate link field</summary>
             <form id="add-form" class="add-song"><div class="add-input"><span class="link-icon">↗</span><input id="video-url" type="url" placeholder="Paste Spotify, YouTube or YouTube Music link..." required aria-label="YouTube link"></div><button class="primary-btn" id="add-btn" type="submit">Play now</button></form>
           </details>
@@ -91,7 +92,7 @@
         <button id="leave-btn" class="leave-btn">← Leave room</button>
       </aside>
     </main>
-    <footer class="footer"><span>shatsu · v0.3.2 alpha</span><span>listen closer, even from afar ♡</span></footer>
+    <footer class="footer"><span>shatsu · v0.4.0 alpha</span><span>listen closer, even from afar ♡</span></footer>
   </div>
   <dialog class="guide-dialog" id="guide-dialog" aria-labelledby="guide-title">
     <div class="guide-heading"><span class="eyebrow">SHATSU STARTER GUIDE</span><button type="button" class="guide-close" data-close-guide aria-label="Close guide">✕</button></div>
