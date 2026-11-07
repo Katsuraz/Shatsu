@@ -49,7 +49,7 @@ public final class MainActivity extends Activity {
         "https://raw.githubusercontent.com/Katsuraz/Shatsu/main/config/server.json";
     private static final String DEFAULT_SERVER = "https://shatsu.onrender.com";
     private static final String RELEASES_API = "https://api.github.com/repos/Katsuraz/Shatsu/releases?per_page=5";
-    private static final String APP_VERSION = "0.2.2-alpha";
+    private static final String APP_VERSION = "0.3.2-alpha";
     private static final int BG = Color.rgb(14, 13, 22);
     private static final int TEXT = Color.rgb(242, 235, 255);
     private static final int MUTED = Color.rgb(190, 180, 203);
@@ -116,7 +116,7 @@ public final class MainActivity extends Activity {
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(false);
         settings.setJavaScriptCanOpenWindowsAutomatically(false);
-        settings.setUserAgentString(settings.getUserAgentString() + " ShatsuAndroid/0.2.2");
+        settings.setUserAgentString(settings.getUserAgentString() + " ShatsuAndroid/0.3.2");
         browser.setBackgroundColor(BG);
         browser.setVisibility(View.INVISIBLE);
         // The bridge exposes only a validated, user-initiated Android share action.
