@@ -18,3 +18,43 @@
 .guide-content{min-height:230px}.guide-content article[hidden]{display:none}.guide-content article h3{font:750 21px/1.3 Outfit,system-ui;margin:9px 0}.guide-content article p{font-size:15px;line-height:1.7;color:#d4c8df}.guide-content strong{color:#e4c5ff}.guide-art{font-size:55px;display:block;padding:12px 0}
 .guide-bottom{border-top:1px solid #544564;padding-top:17px;display:flex;justify-content:space-between;align-items:center;gap:12px}.guide-bottom>span{font-size:12px;color:#ad9cbf}.guide-controls{display:flex;gap:9px}.guide-controls button{border-radius:10px;min-height:42px;padding:9px 13px;font-size:13px;font-weight:750;cursor:pointer}.guide-secondary{background:#332840;border:1px solid #604e70;color:#ddd}.guide-secondary:disabled{opacity:.35;cursor:default}.guide-primary{background:#bb91f5;color:#191022;border:0}
 @media(max-width:550px){.guide-trigger{padding:9px 11px;font-size:11px}.invite-actions{flex-direction:column}.invite-actions button{min-height:38px}.guide-dialog{padding:19px}.guide-bottom{align-items:flex-start;flex-direction:column}.guide-controls{width:100%}.guide-controls button{flex:1}}
+
+
+/* Shatsu 0.3 · integrated library and room playback options */
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.discover-panel{margin-top:18px;padding:19px;border-radius:22px;background:#171721;border:1px solid #393748;box-shadow:0 12px 35px #0002}
+.discover-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
+.discover-header h2{font-size:1.35rem;margin:5px 0 0;line-height:1.2}
+.discover-form{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center}
+.discover-form input,.discover-form select{min-height:46px;border-radius:12px;background:#0e0e18;border:1px solid #454254;color:#f7f4ff;font:inherit;padding:9px 12px;min-width:0}
+.discover-form .primary-btn{padding:10px 15px;min-height:46px}
+.discover-results{display:grid;gap:9px;margin-top:15px;max-height:350px;overflow-y:auto;overscroll-behavior:contain}
+.discover-result{display:flex;align-items:center;gap:11px;padding:9px;border:1px solid #393748;border-radius:14px;background:#1e1d29;min-width:0}
+.discover-result img,.discover-art-fallback{width:72px;height:52px;border-radius:9px;object-fit:cover;flex:none;background:#342f44;display:grid;place-items:center;font-size:23px}
+.discover-info{min-width:0;flex:1;display:flex;flex-direction:column;gap:4px}
+.discover-info strong{font-size:.92rem;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.discover-info span{font-size:.78rem;color:#b8b4c9;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.discover-pick{min-height:37px;border-radius:10px;padding:8px 10px;background:#d4b5fe;color:#171122;font-weight:800;border:none;cursor:pointer;white-space:nowrap}
+.discover-pick:disabled{opacity:.5}
+.discover-help{font-size:.77rem;color:#b9b3cb;margin:12px 0}
+.link-fallback{margin-top:8px;padding-top:10px;border-top:1px solid #383748}
+.link-fallback summary{cursor:pointer;font-size:.83rem;font-weight:700;color:#cfc5f7;padding:7px 0}
+.link-fallback .add-song{margin-top:8px}
+.playback-options{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;padding:14px 7px 6px}
+.playback-options label{display:flex;align-items:center;gap:6px;font-size:.82rem;color:#eee8f7;white-space:nowrap}
+.playback-options input[type=checkbox]{width:17px;height:17px;accent-color:#c4a0ff}
+.playback-options input[type=checkbox]:disabled,.playback-options select:disabled{opacity:.55;cursor:not-allowed}
+.playback-options select{border:1px solid #49465b;border-radius:8px;background:#22212e;color:#fff;font:inherit;padding:5px 6px}
+.playback-options .volume-option{flex:1;min-width:130px;justify-content:flex-end}
+.playback-options input[type=range]{min-width:85px;max-width:135px;accent-color:#c4a0ff}
+.room-control-note{margin:4px 6px 8px;font-size:.72rem;color:#aaa4bd}
+@media(max-width:650px){
+ .discover-panel{padding:14px;margin-top:12px}
+ .discover-form{grid-template-columns:minmax(0,1fr) auto}
+ .discover-form input{grid-column:1/-1}
+ .discover-form select{width:100%}
+ .discover-results{max-height:300px}
+ .discover-header h2{font-size:1.18rem}
+ .playback-options{gap:12px}
+ .playback-options .volume-option{justify-content:flex-start}
+}
