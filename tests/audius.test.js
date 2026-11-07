@@ -4,6 +4,7 @@ import { searchAudius, audiusStreamUrl } from '../lib/audius.js';
 import { audiusTrackId, parseTrack } from '../lib/track.js';
 import { RoomStore } from '../lib/rooms.js';
 import { createShatsuServer } from '../server.js';
+import { AudiusRoomPlayer } from '../public/audius.js';
 
 const ID = 'D7KyD';
 const OTHER = 'xj9Kp5';
@@ -74,4 +75,34 @@ test('a real Shatsu search endpoint can provide Audius results without a YouTube
   const audioModule = await fetch(url + '/audius.js');
   assert.equal(audioModule.status, 200);
   assert.match(await audioModule.text(), /AudiusRoomPlayer/);
+});
+
+test('Audius player restarts the same track on Repeat One and stops on provider switches', () => {
+  const events = new Map();
+  const mockAudio = {
+    src: '', currentTime: 10, duration: 20, readyState: 1,
+    ended: false, paused: true, volume: 1,
+    addEventListener(type, cb) { events.set(type, cb); },
+    pause() { this.paused = true; },
+    load() {},
+    play() { this.paused = false; return Promise.resolve(); },
+    removeAttribute(name) { if (name === 'src') this.src = ''; }
+  };
+  const player = new AudiusRoomPlayer(mockAudio);
+  player.setVolume(45);
+  assert.equal(mockAudio.volume, .45);
+  const first = { provider: 'audius', trackId: ID, revision: 1, playing: true };
+  player.sync(first, 2, { canPlay: true });
+  assert.match(mockAudio.src, /\/tracks\/D7KyD\/stream/);
+  assert.equal(player.trackId, ID);
+  mockAudio.ended = true;
+  mockAudio.currentTime = 20;
+  player.endReportedTrack = ID;
+  player.endReportedRevision = 1;
+  player.sync({ ...first, revision: 2 }, 0, { canPlay: true });
+  assert.equal(mockAudio.currentTime, 0);
+  assert.equal(player.endReportedTrack, null);
+  player.sync({ provider: 'youtube' }, 0);
+  assert.equal(player.trackId, null);
+  assert.equal(mockAudio.src, '');
 });
