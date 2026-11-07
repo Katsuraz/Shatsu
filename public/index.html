@@ -49,7 +49,7 @@
   <button id="native-background-btn" type="button" class="background-audio-btn" hidden>🎧 Play in background</button>
   <small id="native-background-note">On Android, enable background audio to listen with the screen locked. YouTube playback stays in the official visible player.</small>
 </div><div class="spotify-card" id="spotify-card" hidden><div class="spotify-mark">♫</div><strong>Spotify listening</strong><p>This track plays in your own Spotify app. Connect your account below and start Spotify to activate your device.</p><a id="spotify-open" href="https://open.spotify.com/" rel="noopener noreferrer" target="_blank">Open track in Spotify ↗</a></div></div>
-          <div class="now-playing"><div class="song-disc">♫</div><div class="song-info"><div class="eyebrow small">NOW PLAYING</div><strong id="current-title">Your shared soundtrack</strong><span id="track-subtitle">Waiting for the first song</span></div></div>
+          <div class="now-playing"><div class="song-disc">♫</div><div class="song-info"><div class="eyebrow small">NOW PLAYING</div><strong id="current-title">Your shared soundtrack</strong><span id="track-subtitle">Waiting for the first song</span></div><button type="button" id="like-current" class="like-current" title="Save current song">♡ Like</button></div>
           <div class="timeline"><span id="position">0:00</span><input id="seek" type="range" min="0" max="100" value="0" aria-label="Seek position"><span id="duration">0:00</span></div>
           <div class="transport"><button id="previous-btn" class="icon-btn" title="Previous song" aria-label="Previous song">⏮</button><button id="sync-btn" class="icon-btn" title="Catch up with the host" aria-label="Catch up with the host">↻</button><button id="toggle-btn" class="play-btn" aria-label="Play or pause">▶</button><button id="next-btn" class="icon-btn" title="Next in queue" aria-label="Next in queue">⏭</button></div>
           <section class="playback-options" aria-label="Room playback controls">
@@ -81,6 +81,26 @@
           <details class="link-fallback"><summary>Optional: separate link field</summary>
             <form id="add-form" class="add-song"><div class="add-input"><span class="link-icon">↗</span><input id="video-url" type="url" placeholder="Paste Spotify, YouTube or YouTube Music link..." required aria-label="YouTube link"></div><button class="primary-btn" id="add-btn" type="submit">Play now</button></form>
           </details>
+        </section>
+        <section id="library-panel" class="music-library-panel" aria-label="Your saved music">
+          <div class="library-top">
+            <div><span class="eyebrow small">MY MUSIC</span><h2>Your library</h2></div>
+            <button type="button" id="library-create" class="library-action">+ Create playlist</button>
+          </div>
+          <div class="library-tabs" role="group" aria-label="Music library section">
+            <button type="button" data-library-view="liked" class="selected" aria-pressed="true">♥ Liked Songs</button>
+            <button type="button" data-library-view="playlists" aria-pressed="false">♫ Playlists</button>
+            <button type="button" data-library-view="recent" aria-pressed="false">↺ Recent</button>
+          </div>
+          <p id="library-status" class="library-status" aria-live="polite">Your saved songs and playlists</p>
+          <div id="library-content" class="library-content"></div>
+          <div class="library-footer">
+            <button type="button" id="library-export">Export library</button>
+            <label for="library-import" class="library-import-label">Import library
+              <input id="library-import" type="file" accept=".json,application/json" hidden>
+            </label>
+            <span>Saved on this phone · No account needed</span>
+          </div>
         </section>
         <div class="hint">YouTube's official video player remains visible. Some videos may not allow embedding. Playback requires a tap on some devices.</div>
         <a id="open-original-youtube" class="external-song-link" href="https://www.youtube.com/" hidden>↗ Open this song on YouTube in Brave (outside Shatsu sync)</a>
