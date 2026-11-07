@@ -71,6 +71,25 @@ If the queue is empty, music stops unless Repeat is enabled. Auto Next also work
 
 Shatsu plays through official YouTube visible **video** embeds. It **does not** control the YouTube Music app directly, extract audio, bypass ads, or guarantee background playback with a locked screen. Not every YouTube video permits embedding.
 
+## My Library — Liked Songs and personal playlists (v0.4.1)
+
+Shatsu's original music library brings Spotify-style organization without requiring accounts or copying third-party app code.
+
+1. Open your room and select a track. Tap **♡ Like** next to Now Playing or the heart on a search result to save it.
+2. Open **Your Library → ♥ Liked Songs** to see favorites. Use **▶ Play all** as a host or **+ Queue all** as a listener.
+3. Tap **+ Create playlist**, give it a name, then add songs with **＋** next to search results or **+ Current** inside the playlist.
+4. Open **Playlists** to rename, delete, add, or remove saved tracks.
+5. Choose **Recent** to replay recently selected songs.
+6. The host can queue a saved playlist in one action; guests can add a batch of up to 30 songs. The server respects the normal 60-song room queue limit.
+
+**Important:** Liked Songs, playlists and history live in this phone/browser's local storage. They do not automatically sync across devices, and clearing app storage removes them. **Export library** downloads a JSON backup, while **Import library** restores it (replacing the local library). Streaming availability still depends on each music provider.
+
+### Can I sign in with Spotify or YouTube instead?
+
+- **YouTube:** You can already play supported public YouTube videos in Shatsu's visible official embedded player without logging in. Google sign-in can grant access to certain account-related YouTube Data API features, but does not unlock YouTube Music's native streams, background playback or unrestricted song search for third-party apps.
+- **Spotify:** The existing Spotify authorization flow requires the app owner to register a Spotify developer client ID. A Premium account is required for Spotify's official in-browser Web Playback SDK. Shatsu does not yet include that direct Spotify browser player; the existing integration controls a listener's separately running official Spotify player.
+- Shatsu does not request or store your Spotify/Google password. Use the providers' own official authorization pages when account features are enabled.
+
 ## 5. Spotify (optional, Premium and configuration needed)
 
 Spotify is more restricted. The owner must register Shatsu as a Spotify developer
