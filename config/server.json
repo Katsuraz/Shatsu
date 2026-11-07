@@ -1,4 +1,4 @@
 {
-  "serverUrl": null,
-  "note": "The owner publishes a verified Shatsu HTTPS server address here after deployment."
+  "serverUrl": "https://shatsu.onrender.com",
+  "note": "Verified as a live Render deployment on 2026-11-07. Shatsu Android clients discover this URL automatically."
 }
