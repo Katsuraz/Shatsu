@@ -1,6 +1,7 @@
 import { SpotifyController } from './spotify.js';
 import { AudiusRoomPlayer } from './audius.js';
 import { initDiscovery, rememberRecent } from './discover.js';
+import { initLibraryUI } from './library-ui.js';
 // Shatsu 0.1.0: browser-side room client. No music files are proxied, downloaded or re-streamed.
 const $ = id => document.getElementById(id);
 const dom = {
@@ -550,5 +551,6 @@ initDiscovery({
   api, spotify, isHost, act, showToast,
   armPlayback: () => { userEnabledPlayback = true; dom.start.hidden = true; }
 });
+initLibraryUI({ act, isHost, getState: () => state, showToast });
 loadYouTubeApi();
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('/sw.js').catch(() => {});
