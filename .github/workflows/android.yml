@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'android/**'
+      - 'config/**'
       - '.github/workflows/android.yml'
   pull_request:
     paths:
@@ -34,7 +35,7 @@ jobs:
       - name: Upload Shatsu Android debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: Shatsu-v0.2.0-alpha-debug-APK
+          name: Shatsu-v0.2.1-alpha-debug-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
@@ -44,13 +45,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          cp android/app/build/outputs/apk/debug/app-debug.apk Shatsu-v0.2.0-alpha-debug.apk
-          if gh release view v0.2.0-alpha > /dev/null 2>&1; then
-            gh release upload v0.2.0-alpha Shatsu-v0.2.0-alpha-debug.apk --clobber
+          cp android/app/build/outputs/apk/debug/app-debug.apk Shatsu-v0.2.1-alpha-debug.apk
+          if gh release view v0.2.1-alpha > /dev/null 2>&1; then
+            gh release upload v0.2.1-alpha Shatsu-v0.2.1-alpha-debug.apk --clobber
           else
-            gh release create v0.2.0-alpha Shatsu-v0.2.0-alpha-debug.apk \
+            gh release create v0.2.1-alpha Shatsu-v0.2.1-alpha-debug.apk \
               --target "$GITHUB_SHA" \
-              --title "Shatsu v0.2.0 Alpha (experimental)" \
-              --notes "Experimental Android debug APK for Shatsu. The app needs a separately deployed Shatsu server URL; this APK does not host rooms. Spotify sign-in requires a Spotify developer app, eligible accounts, and using Brave. This APK is not production-signed and may require uninstalling prior debug builds to install updates." \
+              --title "Shatsu v0.2.1 Alpha (automatic connection)" \
+              --notes "Experimental Android debug APK for Shatsu. It discovers the server URL automatically from the public GitHub config, but its owner must first deploy the online service; this APK does not host rooms. Spotify sign-in requires a Spotify developer app, eligible accounts, and using Brave. This APK is not production-signed and may require uninstalling prior debug builds to install updates." \
               --prerelease
           fi
