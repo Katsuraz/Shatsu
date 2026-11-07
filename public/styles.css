@@ -87,3 +87,33 @@
 background:rgba(198,163,254,.10);border:1px solid rgba(198,163,254,.26);
 color:#dac9fa;text-align:center;text-decoration:none;font-size:.82rem;font-weight:700}
 .external-song-link[hidden]{display:none!important}
+
+
+/* Shatsu saved music library */
+.like-current{align-self:center;border:1px solid rgba(210,180,255,.35);background:#302741;color:#efd5ff;font-family:inherit;font-weight:800;border-radius:12px;padding:9px 12px;white-space:nowrap;cursor:pointer}
+.like-current:disabled{opacity:.4;cursor:default}
+.discover-favorite{border:1px solid rgba(196,156,248,.4);background:#2b2339;color:#f0dafa;font-size:20px;border-radius:9px;min-width:35px;min-height:36px;cursor:pointer}
+.music-library-panel{margin-top:14px;padding:18px;background:#191824;border:1px solid #3c374f;border-radius:20px}
+.library-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.library-top h2{font-size:1.32rem;margin:3px 0 0}
+.library-top .eyebrow{color:#bd9ddc}
+.library-action{background:#ceadf4;color:#21132f;border:none;padding:9px 12px;border-radius:10px;font:700 .84rem inherit;cursor:pointer;min-height:36px}
+.library-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 10px}
+.library-tabs button{border:1px solid #484157;background:#242130;color:#e9deff;border-radius:10px;padding:10px 12px;cursor:pointer;font-size:.82rem}
+.library-tabs button.selected{background:#c9a5f4;color:#231330;border-color:#c9a5f4;font-weight:800}
+.library-status{color:#bab2cb;font-size:.79rem;margin:10px 0}
+.library-content{display:grid;gap:9px;max-height:440px;overflow-y:auto;overscroll-behavior:contain}
+.library-song,.library-playlist-row{display:flex;align-items:center;gap:10px;padding:11px;border:1px solid #353146;background:#211e2e;border-radius:12px;min-width:0}
+.library-song-name{display:flex;flex:1;min-width:0;flex-direction:column;gap:5px}
+.library-song-name strong{font-size:.87rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.library-song-name span{font-size:.74rem;color:#b1a8c3}
+.library-song-actions,.library-group-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.library-song-actions{flex:none}
+.library-song-actions .library-action,.library-group-actions .library-action{min-height:35px;padding:8px 11px;font:700 .8rem inherit}
+.library-mini-action{color:#ecdaff;border:1px solid #574b69;background:#30273d;border-radius:9px;min-height:35px;min-width:33px;cursor:pointer}
+.library-group-actions{padding:5px 0}
+.library-playlist-row strong{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.88rem}
+.library-footer{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border-top:1px solid #393346;padding-top:14px;margin-top:15px}
+.library-footer button,.library-import-label{border:1px solid #5c5070;border-radius:9px;background:#29243a;color:#decaf2;font-family:inherit;cursor:pointer;padding:8px 11px;font-size:.78rem}
+.library-footer span{font-size:.7rem;color:#998eab}
+@media(max-width:530px){.library-song{align-items:flex-start}.library-song-actions{max-width:118px}.music-library-panel{padding:13px}.library-top h2{font-size:1.18rem}.discover-result{gap:6px}.discover-result img{width:58px;height:46px}.discover-pick{padding:7px 8px}.discover-favorite{min-width:30px}}
