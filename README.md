@@ -1,10 +1,10 @@
 # Shatsu 🎧 — listen together
 
-**Version 0.3.1-alpha** · Node.js 20+ web/server app + native Android companion.
+**Version 0.3.2-alpha** · Node.js 20+ web/server app + native Android companion.
 
-Shatsu lets friends create a private room, search the supported music catalogs, share a queue and chat, and use **their own player** to hear the same song with approximate synchronization. The host controls shared Auto Play, Auto Next, Shuffle, Repeat and previous-track history. Volume affects only the local YouTube player. Available providers in this alpha:
+Shatsu lets friends create a private room, search Audius for free with no API key or account, explore other supported music catalogs, share a queue and chat, and use **their own player** to hear the same song with approximate synchronization. The host controls shared Auto Play, Auto Next, Shuffle, Repeat and previous-track history. Volume affects only the local YouTube player. Available providers in this alpha:
 
-- **YouTube / YouTube Music video links:** official visible YouTube IFrame player in Shatsu's website. This **does not control the native YouTube Music app** and does not bypass background-play or ad rules.
+- **Audius (default free music source):** official Audius public read-only API for song-title and artist search, and direct full-track streaming of independently published music where artist permissions allow. No premium, sign-in or key required; catalog differs from Spotify/YouTube. Host controls, queue and Auto Next synchronize the timeline. API uptime, catalog coverage and region/stream availability aren't guaranteed.\n- **YouTube / YouTube Music video links:** official visible YouTube IFrame player in Shatsu's website. This **does not control the native YouTube Music app** and does not bypass background-play or ad rules.
 - **Spotify track links:** Spotify Web API, individual Spotify Premium accounts and their own active Spotify apps/devices. Each listener authorizes independently. This is **not Spotify audio streaming or rebroadcasting**. It is currently unverified on real Spotify accounts and may be restricted by Spotify developer access.
 - **Brave:** open the Shatsu web app in Brave. Spotify sign-in should happen in a full browser, not the embedded Android WebView.
 
@@ -33,19 +33,17 @@ new versioned prerelease when `android/app/build.gradle`'s `versionName` changes
 See the [friendly step-by-step user guide](docs/USER_GUIDE.md) for current
 usage, limitations and troubleshooting.
 
-## Music discovery and automatic playback (v0.3)
+## Free, no-setup music search and automatic playback (v0.3.2)
 
-- **Inside a room:** open the Music Library, type a song/artist, choose YouTube or Spotify, press Search and then Play (host) or + Queue (guest). Paste a valid YouTube/YouTube Music/Spotify track link into the **same input** to play or enqueue directly, without a YouTube API key. A separate link field remains under "Have a song link?".
-- **Your own recent tracks:** searched/linked songs that you select appear in Recent on that phone, even before catalog search is enabled.
-- **YouTube catalog search:** uses the official YouTube Data API v3. **Not operational until the server owner configures `SHATSU_YOUTUBE_API_KEY`** in the Render service's Environment settings. Enable YouTube Data API v3 in your Google Cloud project and create an API key limited to the YouTube Data API. The key is never shipped in the APK or browser. Render deploys after environment changes. YouTube imposes usage quotas, so Shatsu caches searches. Video embedding can still be unavailable per video or region.
-- **Spotify catalog search:** requires an already-connected eligible Spotify user and a Spotify app client ID configured through `SHATSU_SPOTIFY_CLIENT_ID`. Use Shatsu in Brave for authorization. Spotify developer mode limits apply. Spotify controls each listener's **own** official app; this is not a free Spotify Premium bypass.
-- **Auto Play:** starts newly selected tracks on the shared timeline by default; disabled if the host unchecks Auto Play.
-- **Auto Next:** when the **host's** YouTube player reports the video ended, advance the room's queue. It may need an initial tap per phone because browsers block autoplay until a user interacts. Spotify automatic end-of-track detection isn't implemented yet; the host can press Next for Spotify.
-- **Shuffle / Repeat:** host can shuffle queued tracks or repeat one track/all tracks. Previous moves back through room history. Each listener can set local YouTube volume.
-- **Versioning:** Android launcher still uses the live site, and the app looks for new GitHub releases. Debug builds have changing signing keys, so updating might require reinstalling.
-- **No automatic recommendations yet:** Auto Next plays the **existing queue**; it doesn't silently fetch unrequested tracks.
+1. Open Shatsu in the Android app or Brave, create a room.
+2. Under Music Library choose **Audius · Free** (the default). Search by song title or artist.
+3. Choose a result. The host plays it; guests can queue it. The built-in Audius player syncs to the host timeline and uses the official Audius streaming API directly.
+4. On mobile, everyone may need to tap **▶** once to permit audio playback.
+5. Use Auto Play, Auto Next, Shuffle, Repeat, Previous and per-device volume.
 
-For a complete explanation, see [the listening guide](docs/USER_GUIDE.md).
+Other sources remain selectable: YouTube and YouTube Music video URLs work without credentials, while **YouTube catalog search by song name still needs the owner's YouTube Data API key**. Spotify search and playback need its own authorized client configuration and eligible accounts. Audius covers an independent music catalog and may not have mainstream songs.
+
+Audio is never copied or proxied through the Shatsu backend. Public Audius API access may be rate-limited or change; live two-device testing remains necessary.
 
 ## Start web app / server
 
