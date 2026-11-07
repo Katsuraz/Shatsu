@@ -1,4 +1,5 @@
 import { SpotifyController } from './spotify.js';
+import { initDiscovery, rememberRecent } from './discover.js';
 // Shatsu 0.1.0: browser-side room client. No music files are proxied, downloaded or re-streamed.
 const $ = id => document.getElementById(id);
 const dom = {
@@ -7,7 +8,9 @@ const dom = {
   shareCode: $('share-code'), copy: $('copy-btn'), hostTag: $('host-tag'), count: $('listener-count'),
   participants: $('participants'), trackLabel: $('track-label'), title: $('current-title'), subtitle: $('track-subtitle'),
   placeholder: $('player-placeholder'), input: $('video-url'), addForm: $('add-form'), addBtn: $('add-btn'),
-  toggle: $('toggle-btn'), next: $('next-btn'), sync: $('sync-btn'), start: $('enable-audio'),
+  toggle: $('toggle-btn'), next: $('next-btn'), previous: $('previous-btn'), sync: $('sync-btn'), start: $('enable-audio'),
+  settingsAutoPlay: $('setting-autoplay'), settingsAutoNext: $('setting-autonext'), settingsShuffle: $('setting-shuffle'),
+  settingsRepeat: $('setting-repeat'), localVolume: $('local-volume'),
   seek: $('seek'), position: $('position'), duration: $('duration'), syncText: $('sync-text'),
   queue: $('queue-list'), queueCount: $('queue-count'), chat: $('messages'), chatForm: $('chat-form'), chatText: $('chat-text'),
   leave: $('leave-btn'), toast: $('toast'), spotifyCard: $('spotify-card'), spotifyLink: $('spotify-open'), spotifyConnect: $('spotify-connect'), spotifyStatus: $('spotify-status'), providerLabel: $('provider-label')
@@ -126,7 +129,15 @@ function receiveState(next) {
   dom.hostTag.textContent = host ? 'HOST' : 'GUEST';
   dom.addBtn.textContent = host ? 'Play now' : 'Add to queue';
   dom.toggle.disabled = !host || !hasTrack();
-  dom.next.disabled = !host || state.queue.length === 0;
+  const roomSettings = state.settings || { autoPlay: false, autoNext: false, shuffle: false, repeat: 'off' };
+  dom.next.disabled = !host || (state.queue.length === 0 && roomSettings.repeat === 'off');
+  dom.previous.disabled = !host || !state.canGoBack;
+  for (const [input, value] of [
+    [dom.settingsAutoPlay, roomSettings.autoPlay], [dom.settingsAutoNext, roomSettings.autoNext],
+    [dom.settingsShuffle, roomSettings.shuffle]
+  ]) { input.checked = Boolean(value); input.disabled = !host || !state.settings; }
+  dom.settingsRepeat.value = roomSettings.repeat;
+  dom.settingsRepeat.disabled = !host || !state.settings;
   dom.seek.disabled = !host || !hasTrack();
   dom.trackLabel.textContent = hasTrack() ? 'CURRENTLY PLAYING' : 'NO TRACK SELECTED';
   dom.title.textContent = hasTrack() ? state.playback.title : 'Your shared soundtrack';
@@ -155,11 +166,13 @@ function receiveState(next) {
   if (lastMessageId !== state.messages.at(-1)?.id) renderMessages();
   updateTimeline();
   if (hasTrack() && (oldPlayback?.videoId !== state.playback.videoId || oldPlayback?.trackId !== state.playback.trackId || oldPlayback?.provider !== state.playback.provider)) {
-    userEnabledPlayback = false; playerVideo = null;
-    dom.start.hidden = isSpotify;
+    // Preserve playback permission between tracks for continuous listening.
+    playerVideo = null;
+    dom.start.hidden = isSpotify || userEnabledPlayback;
     syncPlayer(true);
   } else if (oldPlayback?.revision !== state.playback.revision) syncPlayer(true);
   if (!hasTrack()) { dom.start.hidden = true; dom.placeholder.hidden = false; }
+  window.dispatchEvent(new Event('shatsu:roomstate'));
 }
 function renderQueue() {
   dom.queueCount.textContent = `${state.queue.length} song${state.queue.length === 1 ? '' : 's'}`;
@@ -223,7 +236,11 @@ function createPlayer(videoId) {
     width: '100%', height: '100%', videoId,
     playerVars: { playsinline: 1, controls: 1, origin: window.location.origin, rel: 0 },
     events: {
-      onReady: () => { playerReady = true; playerVideo = videoId; syncPlayer(true); },
+      onReady: () => {
+        playerReady = true; playerVideo = videoId;
+        try { player.setVolume(Number(dom.localVolume.value) || 0); } catch {}
+        syncPlayer(true);
+      },
       onStateChange: onYouTubeState,
       onAutoplayBlocked: () => { userEnabledPlayback = false; dom.start.hidden = false; showToast('Tap the video to allow playback on this device.'); },
       onError: () => showToast('This video may not allow embedding. Try another track.')
@@ -240,8 +257,9 @@ function syncPlayer(force) {
     if (playerVideo !== pb.videoId) {
       playerVideo = pb.videoId;
       suppressPlayerEventsUntil = Date.now() + 2600;
-      player.cueVideoById({ videoId: pb.videoId, startSeconds: estimatedPosition() });
-      dom.start.hidden = false;
+      if (userEnabledPlayback && pb.playing) player.loadVideoById({ videoId: pb.videoId, startSeconds: estimatedPosition() });
+      else player.cueVideoById({ videoId: pb.videoId, startSeconds: estimatedPosition() });
+      dom.start.hidden = userEnabledPlayback;
       return;
     }
     if (!userEnabledPlayback) return;
@@ -262,7 +280,14 @@ function syncPlayer(force) {
   } catch (error) { console.debug('Sync pending', error); }
 }
 async function onYouTubeState(event) {
-  if (Date.now() < suppressPlayerEventsUntil || !state || !isHost() || state.playback.provider === 'spotify') return;
+  if (!state || !isHost() || state.playback.provider === 'spotify') return;
+  if (event.data === YT_ENDED) {
+    if (Date.now() < suppressPlayerEventsUntil) return;
+    // The room revision stops stale player events from double-skipping tracks.
+    await act('next', { automatic: true, expectedRevision: state.playback.revision });
+    return;
+  }
+  if (Date.now() < suppressPlayerEventsUntil) return;
   // Translate deliberate host interaction with official YouTube controls into room events.
   try {
     if (event.data === YT_PLAYING && !state.playback.playing) {
@@ -271,7 +296,7 @@ async function onYouTubeState(event) {
       await act('play');
     } else if (event.data === YT_PAUSED && state.playback.playing) {
       await act('pause');
-    } else if (event.data === YT_ENDED && state.queue.length) await act('next');
+    }
   } catch { /* act reports failure. */ }
 }
 async function act(type, extra = {}) {
@@ -331,7 +356,12 @@ dom.addForm.addEventListener('submit', async event => {
   const provider = trackId ? 'spotify' : 'youtube';
   const title = trackId ? 'Spotify track' : titleForUrl(input, videoId);
   const result = await act(isHost() ? 'setTrack' : 'enqueue', { provider, trackId, videoId, title });
-  if (result) { dom.input.value = ''; showToast(isHost() ? 'Track loaded. Tap play to start!' : 'Added to room queue!'); }
+  if (result) {
+    rememberRecent({ provider, trackId, videoId, title, artist: provider === 'spotify' ? 'Spotify' : 'YouTube',
+      image: videoId ? 'https://i.ytimg.com/vi/' + videoId + '/mqdefault.jpg' : '' });
+    dom.input.value = '';
+    showToast(isHost() ? (state?.settings?.autoPlay ? 'Song selected — starting playback!' : 'Track loaded. Tap play to start!') : 'Added to room queue!');
+  }
 });
 dom.toggle.addEventListener('click', async () => {
   if (!isHost() || !hasTrack()) return;
@@ -343,6 +373,17 @@ dom.toggle.addEventListener('click', async () => {
   await act(state.playback.playing ? 'pause' : 'play');
 });
 dom.next.addEventListener('click', () => { if (isHost()) act('next'); });
+dom.previous.addEventListener('click', () => { if (isHost()) act('previous'); });
+for (const [node, key] of [[dom.settingsAutoPlay, 'autoPlay'], [dom.settingsAutoNext, 'autoNext'], [dom.settingsShuffle, 'shuffle']]) {
+  node.addEventListener('change', () => { if (isHost()) act('setSettings', { key, value: node.checked }); });
+}
+dom.settingsRepeat.addEventListener('change', () => { if (isHost()) act('setSettings', { key: 'repeat', value: dom.settingsRepeat.value }); });
+try { dom.localVolume.value = localStorage.getItem('shatsu.volume') || '80'; } catch {}
+dom.localVolume.addEventListener('input', () => {
+  const volume = Number(dom.localVolume.value);
+  try { localStorage.setItem('shatsu.volume', String(volume)); } catch {}
+  if (playerReady) { try { player.setVolume(volume); } catch {} }
+});
 dom.sync.addEventListener('click', () => {
   if (!hasTrack()) return showToast('Add a song first.');
   userEnabledPlayback = true;
@@ -392,6 +433,10 @@ if (inviteCode && /^[A-Z2-9]{8}$/i.test(inviteCode)) {
     } catch { sessionStorage.removeItem(`shatsu.${inviteCode.toUpperCase()}`); }
   }
 }
+});
+initDiscovery({
+  api, spotify, isHost, act, showToast,
+  armPlayback: () => { userEnabledPlayback = true; dom.start.hidden = true; }
 });
 loadYouTubeApi();
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('/sw.js').catch(() => {});
