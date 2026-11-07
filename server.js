@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { HttpError, RoomStore } from './lib/rooms.js';
 import { searchYoutube } from './lib/catalog.js';
+import { searchAudius } from './lib/audius.js';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), 'public');
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
@@ -20,12 +21,12 @@ async function body(req) {
   try { return JSON.parse(text); } catch { throw new HttpError(400, 'Invalid JSON'); }
 }
 
-export function createShatsuServer({ store = new RoomStore(), searchCatalog = searchYoutube } = {}) {
+export function createShatsuServer({ store = new RoomStore(), searchCatalog = searchYoutube, searchOpenMusic = searchAudius } = {}) {
   const server = http.createServer(async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' https://www.youtube.com https://s.ytimg.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://i.ytimg.com https://img.youtube.com https://i.scdn.co; connect-src 'self' https://accounts.spotify.com https://api.spotify.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'");
+    res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' https://www.youtube.com https://s.ytimg.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://i.ytimg.com https://img.youtube.com https://i.scdn.co; connect-src 'self' https://accounts.spotify.com https://api.spotify.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com; media-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'");
     const url = new URL(req.url, 'http://localhost');
     try {
       if (url.pathname === '/api/health' && req.method === 'GET') return respond(res, 200, { ok: true, name: 'Shatsu', version: '0.3.1' });
@@ -33,8 +34,11 @@ export function createShatsuServer({ store = new RoomStore(), searchCatalog = se
       if (url.pathname === '/api/time' && req.method === 'GET') return respond(res, 200, { serverNow: Date.now() });
       if (url.pathname === '/api/search' && req.method === 'GET') {
         const provider = url.searchParams.get('provider') || 'youtube';
-        if (provider !== 'youtube') throw new HttpError(400, 'Use Spotify sign-in for Spotify search');
-        const tracks = await searchCatalog(url.searchParams.get('q') || '');
+        if (provider === 'spotify') throw new HttpError(400, 'Use Spotify sign-in for Spotify search');
+        if (!['youtube', 'audius'].includes(provider)) throw new HttpError(400, 'Unsupported music provider');
+        const tracks = provider === 'audius'
+          ? await searchOpenMusic(url.searchParams.get('q') || '')
+          : await searchCatalog(url.searchParams.get('q') || '');
         return respond(res, 200, { tracks });
       }
       if (url.pathname === '/api/rooms' && req.method === 'POST') {
