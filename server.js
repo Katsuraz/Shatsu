@@ -28,7 +28,7 @@ export function createShatsuServer({ store = new RoomStore(), searchCatalog = se
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' https://www.youtube.com https://s.ytimg.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://i.ytimg.com https://img.youtube.com https://i.scdn.co; connect-src 'self' https://accounts.spotify.com https://api.spotify.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'");
     const url = new URL(req.url, 'http://localhost');
     try {
-      if (url.pathname === '/api/health' && req.method === 'GET') return respond(res, 200, { ok: true, name: 'Shatsu', version: '0.2.0' });
+      if (url.pathname === '/api/health' && req.method === 'GET') return respond(res, 200, { ok: true, name: 'Shatsu', version: '0.3.0' });
       if (url.pathname === '/api/config' && req.method === 'GET') return respond(res, 200, { spotifyClientId: process.env.SHATSU_SPOTIFY_CLIENT_ID || '' });
       if (url.pathname === '/api/time' && req.method === 'GET') return respond(res, 200, { serverNow: Date.now() });
       if (url.pathname === '/api/search' && req.method === 'GET') {
