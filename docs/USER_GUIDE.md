@@ -28,7 +28,7 @@ You can reopen it by tapping **? How to use** at the top, or **⋮ → How to us
 ## 4. Find a song inside Shatsu and keep the queue playing
 
 1. Enter or join a room. Open **Music Library → Search song or artist**.
-2. Choose **YouTube** or **Spotify** as the provider and tap **Search**.
+2. Choose **YouTube** or **Spotify** as the provider and tap **Search**. You can also paste a YouTube/YouTube Music video link straight into this same field and tap **Play link** without a search API key.
 3. Tap **Play** on a result if you're the host. Guests see **+ Queue**, which adds a song for the host to play.
 4. For YouTube, the owner must configure a **YouTube Data API v3 key** once on the server for live search. If search is not yet configured, use **Have a song link? Paste it here instead**. Any song you select is saved to **Recently Played** on your own device, so next time you can pick it directly without a URL.
 5. Tap the player or **Tap to start listening** if your browser asks permission to play video/audio.
