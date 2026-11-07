@@ -172,6 +172,19 @@ export function initDiscovery({ api, spotify, isHost, act, showToast, armPlaybac
       help.textContent = 'Use an official YouTube video or Spotify track URL.';
     }
   });
+  function acceptSharedLink(raw) {
+    const value = String(raw || '').trim();
+    if (!detectSongLink(value)) return;
+    query.value = value;
+    query.dispatchEvent(new Event('input', { bubbles: true }));
+    help.textContent = 'Song received from another app — tap Play link or + Queue.';
+    if (!document.getElementById('room').hidden) {
+      form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+  window.addEventListener('shatsu:sharedsong', event => acceptSharedLink(event.detail?.url));
+  const initialShare = new URLSearchParams(window.location.search).get('share');
+  if (initialShare) acceptSharedLink(initialShare);
   window.addEventListener('shatsu:recentchange', () => { if (lastMode === 'recent') render(loadRecent(), 'recent'); });
   window.addEventListener('shatsu:roomstate', () => {
     if (lastResults.length) render(lastResults, lastMode);
