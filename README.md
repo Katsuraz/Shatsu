@@ -1,6 +1,6 @@
 # Shatsu 🎧 — listen together
 
-**Version 0.2.1-alpha** · Node.js 20+ web/server app + native Android companion.
+**Version 0.2.2-alpha** · Node.js 20+ web/server app + native Android companion.
 
 Shatsu lets friends create a private room, share a queue and chat, and use **their own player** to hear the same song with approximate synchronization. Available providers in this alpha:
 
@@ -10,11 +10,28 @@ Shatsu lets friends create a private room, share a queue and chat, and use **the
 
 One room can queue tracks from either provider. Switching from YouTube to Spotify requires Spotify listeners to connect their accounts. **Cross-provider matching** (one user on Spotify, another playing the same recording on YouTube) is **not implemented**.
 
-## Android: no server address required
+## Android app — automatic connection and in-app guide (v0.2.2 alpha)
 
-Starting in Android **v0.2.1 alpha**, Shatsu looks up its online listening server from [config/server.json](config/server.json) in this GitHub repository. When that server is published and healthy, the app automatically loads the room UI. No one needs to enter a hosting URL.
+**Your listening server is deployed at [shatsu.onrender.com](https://shatsu.onrender.com).**
+The Android app loads the published server address from [`config/server.json`](config/server.json)
+and falls back to the verified public Render origin when GitHub is unavailable. It checks
+`/api/health`, shows connection progress, and provides **Try again** if the free service
+is waking up. Advanced server entry remains in `⋮` for developers only.
 
-**One-time hosting is still necessary.** Until the owner connects and deploys Shatsu on Render or another Node host, the config intentionally contains null. The app displays a clear setup notice instead of a blank screen or mandatory server form. After hosting is deployed, set `serverUrl` to the exact verified HTTPS origin in `config/server.json`. Everyone can then use the same APK without further setup. Manual server override remains in the Android Advanced menu.
+On the first visit the web app and Android WebView present a five-step guide:
+create or join a room, share an invite, paste a YouTube / YouTube Music video,
+allow playback on each phone, and optionally connect Spotify through Brave.
+The guide is always available from **? How to use** at the top of Shatsu and
+from the Android `⋮` menu. **Invite friend** opens Android's share sheet or
+browser Web Share API; **Copy** is an alternative.
+
+The Android app automatically checks GitHub Releases for newer Shatsu alpha APKs,
+then offers a download. Android requires the user's confirmation to install an APK:
+Shatsu does not silently sideload packages. The CI build automatically creates a
+new versioned prerelease when `android/app/build.gradle`'s `versionName` changes.
+
+See the [friendly step-by-step user guide](docs/USER_GUIDE.md) for current
+usage, limitations and troubleshooting.
 
 ## Start web app / server
 
@@ -22,19 +39,7 @@ Starting in Android **v0.2.1 alpha**, Shatsu looks up its online listening serve
 npm start
 ```
 
-Open `http://localhost:4173`. Local tests: `npm run check && npm test`. The server uses port `PORT` (default 4173) and host `HOST` (default `0.0.0.0`). To invite friends across the internet, deploy this Node server behind **HTTPS** on a host with long-running processes and SSE support. Room state is in memory and expires after inactivity, so **use a single server instance** for now. There is no deployed Shatsu server included with this source.
-
-### Put Shatsu online (Android + friends)
-
-The APK needs a publicly reachable Shatsu server. You can deploy one from this repository using [Deploy to Render](https://render.com/deploy?repo=https://github.com/Katsuraz/Shatsu). The repo includes `render.yaml` with a Node web service, a Singapore region, and an optional Spotify client ID setting.
-
-1. Sign in to Render and approve access to `Katsuraz/Shatsu`.
-2. Create the Blueprint service and complete the deployment (check hosting plan terms and current availability).
-3. Copy its HTTPS address, such as `https://YOUR-SERVICE.onrender.com`.
-4. Once the server is healthy, publish its verified HTTPS origin as `serverUrl` in `config/server.json`. Then open Shatsu; it connects automatically.
-5. For Spotify, add the public `SHATSU_SPOTIFY_CLIENT_ID` environment variable on Render and register `https://YOUR-SERVICE.onrender.com/` as an exact redirect URI in your Spotify developer dashboard. Each friend must authorize their own eligible Spotify account.
-
-**Free hosting may sleep during inactivity**, disrupting SSE connections and wiping Shatsu's in-memory rooms after a restart. For reliable everyday hosting, use a persistent server and eventually add durable room storage. This Blueprint does not deploy anything automatically; you must connect your hosting account and complete setup.
+Open `http://localhost:4173`. Local tests: `npm run check && npm test`. The server uses port `PORT` (default 4173) and host `HOST` (default `0.0.0.0`). To invite friends across the internet, deploy this Node server behind **HTTPS** on a host with long-running processes and SSE support. Room state is in memory and expires after inactivity, so **use a single server instance** for now. The public instance is https://shatsu.onrender.com; local testing remains optional.
 
 ### Spotify setup (optional)
 
@@ -48,11 +53,11 @@ Spotify uses **OAuth Authorization Code + PKCE**. Access and refresh tokens are 
 
 ## Build the Android APK
 
-The native Android launcher lives in [`android/`](android/). It automatically discovers its published web server address, provides the Shatsu room UI in a WebView and offers a **Brave ↗** shortcut. The APK is **not a standalone server**; online rooms need a deployed Shatsu service. A custom server address is only available in Advanced settings.
+The native Android launcher lives in [`android/`](android/). It loads the Shatsu room web UI in a WebView after automatically discovering the verified server URL, and provides a **Brave ↗** shortcut. The APK is **not a standalone server**; online use requires an already deployed Shatsu service. Manual server address entry is only available from **⋮ → Advanced: custom server**.
 
 **Recommended for Spotify:** use the launcher **Brave ↗** button and connect inside Brave. Spotify authorization in the Android embedded WebView is deliberately disabled because the OAuth verifier is browser-session-local.
 
-On GitHub, open **Actions → Shatsu Android APK → latest run → Artifacts** and download `Shatsu-v0.2.1-alpha-debug-APK`. Installing this debug APK may require allowing installs from your browser/file manager. Debug APKs are signed with an ephemeral CI debug key, so future builds may require uninstalling the previous debug build (which deletes local app settings). Do not treat this as an official production-signed release.
+On GitHub, open **Actions → Shatsu Android APK → latest run → Artifacts** and download `Shatsu-v0.2.2-alpha-debug-APK`. Installing this debug APK may require allowing installs from your browser/file manager. Debug APKs are signed with an ephemeral CI debug key, so future builds may require uninstalling the previous debug build (which deletes local app settings). Do not treat this as an official production-signed release.
 
 To build locally, install Android SDK platform 35, Java 17, Gradle 8.11.1, then run:
 
@@ -69,7 +74,7 @@ APK: `android/app/build/outputs/apk/debug/app-debug.apk`. The GitHub workflow bu
 - Official YouTube embedded player, visible in the room.
 - Spotify track-link identification, browser PKCE authorization, Spotify Web API device playback commands.
 - SSE events, client/server clock-offset calculation, drift correction and reconnects.
-- Simple Android installer with URL configuration and Brave shortcut.
+- Android launcher with automatic connection, integrated guide, native invite sharing, Brave shortcut and update notifications.
 - Automated Node tests plus separate Android APK build workflow.
 
 ## Caveats, security and provider constraints

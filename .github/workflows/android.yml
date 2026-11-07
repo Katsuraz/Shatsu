@@ -4,7 +4,6 @@ on:
     branches: [main]
     paths:
       - 'android/**'
-      - 'config/**'
       - '.github/workflows/android.yml'
   pull_request:
     paths:
@@ -30,28 +29,32 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
-      - name: Build installable Android debug APK
+      - name: Build Shatsu Android debug APK
         run: gradle -p android :app:assembleDebug --no-daemon --stacktrace
-      - name: Upload Shatsu Android debug APK
+      - name: Upload installable debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: Shatsu-v0.2.1-alpha-debug-APK
+          name: Shatsu-v0.2.2-alpha-debug-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
-      - name: Publish downloadable GitHub prerelease APK
+      - name: Publish GitHub prerelease
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          cp android/app/build/outputs/apk/debug/app-debug.apk Shatsu-v0.2.1-alpha-debug.apk
-          if gh release view v0.2.1-alpha > /dev/null 2>&1; then
-            gh release upload v0.2.1-alpha Shatsu-v0.2.1-alpha-debug.apk --clobber
+          APP_VERSION=$(awk -F "'" '/versionName / {print $2; exit}' android/app/build.gradle)
+          test -n "$APP_VERSION"
+          TAG="v${APP_VERSION}"
+          APK="Shatsu-${TAG}-debug.apk"
+          cp android/app/build/outputs/apk/debug/app-debug.apk "$APK"
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "Release $TAG already exists. Keeping it immutable; bump versionName for new builds."
           else
-            gh release create v0.2.1-alpha Shatsu-v0.2.1-alpha-debug.apk \
+            gh release create "$TAG" "$APK" \
               --target "$GITHUB_SHA" \
-              --title "Shatsu v0.2.1 Alpha (automatic connection)" \
-              --notes "Experimental Android debug APK for Shatsu. It discovers the server URL automatically from the public GitHub config, but its owner must first deploy the online service; this APK does not host rooms. Spotify sign-in requires a Spotify developer app, eligible accounts, and using Brave. This APK is not production-signed and may require uninstalling prior debug builds to install updates." \
+              --title "Shatsu ${TAG} — guided setup and automatic updates" \
+              --notes "Experimental Android debug APK. Automatic connection to the live Shatsu server, first-run user guide, native invite sharing and update notifications. Requires user permission to install; debug signing may change across builds. Spotify requires independent developer authorization and eligible accounts." \
               --prerelease
           fi

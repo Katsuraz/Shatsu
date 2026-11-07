@@ -304,11 +304,22 @@ dom.entry.addEventListener('submit', async event => {
   } catch (error) { showToast(error.message); }
   finally { dom.submit.disabled = false; }
 });
+const inviteLink = () => credentials ? `${window.location.origin}/?room=${encodeURIComponent(credentials.code)}` : '';
 dom.copy.addEventListener('click', async () => {
   if (!credentials) return;
-  const link = `${window.location.origin}/?room=${encodeURIComponent(credentials.code)}`;
-  try { await navigator.clipboard.writeText(link); showToast('Invite link copied! ♡'); }
-  catch { showToast(`Share room code ${credentials.code}`); }
+  try { await navigator.clipboard.writeText(inviteLink()); showToast('Invite link copied! ♡'); }
+  catch { window.prompt('Copy this invite link:', inviteLink()); }
+});
+document.getElementById('share-btn').addEventListener('click', async () => {
+  if (!credentials) return;
+  const url = inviteLink();
+  if (window.ShatsuAndroid?.shareInvite) { window.ShatsuAndroid.shareInvite(url); return; }
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Listen with me on Shatsu 🎧', text: `Join my room ${credentials.code}`, url }); return; }
+    catch (error) { if (error.name === 'AbortError') return; }
+  }
+  try { await navigator.clipboard.writeText(url); showToast('Invite link copied — send it to a friend!'); }
+  catch { window.prompt('Copy and share this invite link:', url); }
 });
 dom.addForm.addEventListener('submit', async event => {
   event.preventDefault();

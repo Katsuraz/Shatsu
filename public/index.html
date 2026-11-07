@@ -16,6 +16,7 @@
   <div class="shell">
     <header class="topbar">
       <a class="brand" href="/" aria-label="Shatsu home"><span class="brand-icon"><svg viewBox="0 0 36 36" fill="none" aria-hidden="true"><path d="M4 20h4l3-9 5 17 5-22 5 15 3-6h3" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span>shatsu<span class="brand-dot">.</span></span></a>
+      <button type="button" class="guide-trigger" data-open-guide aria-label="How to use Shatsu">? How to use</button>
       <span class="header-tag"><span class="status-dot"></span> made for shared moments</span>
     </header>
 
@@ -30,6 +31,7 @@
           <button id="entry-submit" class="primary-btn" type="submit">Create room <span>↗</span></button>
         </form>
         <p class="tiny-note">No signup needed · Free to use · Best in Brave</p>
+        <p class="guide-shortcut"><button type="button" data-open-guide>New here? View the 5-step guide</button></p>
       </section>
       <div class="features"><span>✦ Private rooms</span><span>✦ Live sync</span><span>✦ Shared queue</span><span>✦ Room chat</span></div>
     </main>
@@ -50,7 +52,7 @@
         <div class="hint">YouTube's official video player remains visible. Some videos may not allow embedding. Playback requires a tap on some devices.</div>
       </section>
       <aside class="room-sidebar">
-        <div class="panel room-share"><div class="panel-heading"><h2>Your room</h2><span class="chip" id="host-tag">HOST</span></div><div class="code-box"><div><span class="micro">ROOM CODE</span><strong id="share-code">--------</strong></div><button id="copy-btn" aria-label="Copy invite link">Copy link ↗</button></div><div class="participants-heading">Listening now <span id="listener-count">0</span></div><div id="participants" class="participants"></div></div>
+        <div class="panel room-share"><div class="panel-heading"><h2>Your room</h2><span class="chip" id="host-tag">HOST</span></div><div class="code-box"><div><span class="micro">ROOM CODE</span><strong id="share-code">--------</strong></div><div class="invite-actions"><button id="share-btn" aria-label="Share invite link">Invite friend ↗</button><button id="copy-btn" aria-label="Copy invite link">Copy</button></div></div><div class="participants-heading">Listening now <span id="listener-count">0</span></div><div id="participants" class="participants"></div></div>
         <div class="panel queue-panel"><div class="panel-heading"><h2>Up next</h2><span id="queue-count" class="chip subdued">0 songs</span></div><div id="queue-list" class="queue-list"><p class="empty-list">The queue's wide open. Add a song!</p></div></div>
         <div class="panel chat-panel"><div class="panel-heading"><h2>Room chat <span class="chat-heart">♡</span></h2></div><div id="messages" class="messages" role="log" aria-label="Room chat"><p class="empty-list">Say hi to your friends 👋</p></div><form id="chat-form" class="chat-composer"><input id="chat-text" maxlength="280" placeholder="Say something nice..." aria-label="Chat message"><button type="submit" aria-label="Send message">↗</button></form></div>
         <div class="panel spotify-panel"><div class="panel-heading"><h2>Spotify</h2><span class="chip subdued">PREMIUM</span></div><p id="spotify-status">Spotify authorization is loading…</p><button type="button" id="spotify-connect" class="spotify-connect">Connect Spotify</button><p class="tiny-provider-note">Each listener connects their own account. Spotify playback is controlled via the official Web API, not re-streamed.</p></div>
@@ -59,7 +61,21 @@
     </main>
     <footer class="footer"><span>shatsu · v0.2.0 alpha</span><span>listen closer, even from afar ♡</span></footer>
   </div>
+  <dialog class="guide-dialog" id="guide-dialog" aria-labelledby="guide-title">
+    <div class="guide-heading"><span class="eyebrow">SHATSU STARTER GUIDE</span><button type="button" class="guide-close" data-close-guide aria-label="Close guide">✕</button></div>
+    <h2 id="guide-title">Listen together in minutes ♫</h2>
+    <p class="guide-lead">No server setup, no signup, no complicated steps.</p>
+    <div class="guide-content">
+      <article data-guide-step><span class="guide-art">🎧</span><h3>1. Create your space</h3><p>Type any nickname and tap <strong>Create room</strong>. Your friends can join using your room link or 8-character code.</p></article>
+      <article data-guide-step hidden><span class="guide-art">💌</span><h3>2. Invite your friends</h3><p>Inside the room, tap <strong>Invite friend</strong> to open your phone's share menu. Or tap <strong>Copy</strong> to send the invite link yourself.</p></article>
+      <article data-guide-step hidden><span class="guide-art">▶</span><h3>3. Choose a song</h3><p>Paste a public <strong>YouTube</strong> or <strong>YouTube Music</strong> video link and tap <strong>Play now</strong>. Everyone uses the official video player.</p></article>
+      <article data-guide-step hidden><span class="guide-art">🔄</span><h3>4. Stay in sync</h3><p>The host controls playback. If your phone blocks autoplay, tap <strong>Tap to start listening</strong>. Use the <strong>↻</strong> button to catch up with the room.</p></article>
+      <article data-guide-step hidden><span class="guide-art">🎵</span><h3>5. Spotify is optional</h3><p>Spotify needs an eligible Premium account and developer authorization. Tap <strong>Brave ↗</strong> to sign in in your browser. Spotify songs play through each person's own Spotify app. Automatic matching across Spotify and YouTube is not available yet.</p></article>
+    </div>
+    <div class="guide-bottom"><span id="guide-progress" aria-live="polite">Step 1 of 5</span><div class="guide-controls"><button type="button" class="guide-secondary" id="guide-back">Back</button><button type="button" class="guide-primary" id="guide-next">Next →</button></div></div>
+  </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="/app.js" type="module"></script>
+  <script src="/guide.js" type="module"></script>
 </body>
 </html>
