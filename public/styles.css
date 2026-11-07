@@ -97,7 +97,7 @@ color:#dac9fa;text-align:center;text-decoration:none;font-size:.82rem;font-weigh
 .library-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .library-top h2{font-size:1.32rem;margin:3px 0 0}
 .library-top .eyebrow{color:#bd9ddc}
-.library-action{background:#ceadf4;color:#21132f;border:none;padding:9px 12px;border-radius:10px;font:700 .84rem inherit;cursor:pointer;min-height:36px}
+.library-action{background:#ceadf4;color:#21132f;border:none;padding:9px 12px;border-radius:10px;font-size:.84rem;font-weight:700;font-family:inherit;cursor:pointer;min-height:36px}
 .library-tabs{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 10px}
 .library-tabs button{border:1px solid #484157;background:#242130;color:#e9deff;border-radius:10px;padding:10px 12px;cursor:pointer;font-size:.82rem}
 .library-tabs button.selected{background:#c9a5f4;color:#231330;border-color:#c9a5f4;font-weight:800}
