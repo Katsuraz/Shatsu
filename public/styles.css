@@ -58,3 +58,11 @@
  .playback-options{gap:12px}
  .playback-options .volume-option{justify-content:flex-start}
 }
+
+/* compact, actionable music-picker status; keep Android screen unobstructed */
+.discover-fallback{display:grid;gap:10px;padding:14px;border-radius:14px;background:rgba(194,154,250,.10);border:1px solid rgba(194,154,250,.22)}
+.discover-fallback strong{font-size:.92rem;color:#f3e9ff}
+.discover-fallback p{font-size:.84rem;line-height:1.55;color:#c9c2d6;margin:0}
+.discover-find-external{display:inline-flex;justify-content:center;align-items:center;min-height:43px;max-width:100%;padding:9px 14px;border-radius:12px;background:#bd8def;color:#1f122d;text-decoration:none;font-size:.9rem;font-weight:800}
+.discover-inline-error{font-size:.87rem;color:#ffe1e9;padding:10px 0;line-height:1.5}
+.toast{max-width:min(350px,calc(100% - 40px));font-size:12px;line-height:1.35;padding:11px 15px}
