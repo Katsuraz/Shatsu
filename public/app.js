@@ -1,4 +1,5 @@
 import { SpotifyController } from './spotify.js';
+import { AudiusRoomPlayer } from './audius.js';
 import { initDiscovery, rememberRecent } from './discover.js';
 // Shatsu 0.1.0: browser-side room client. No music files are proxied, downloaded or re-streamed.
 const $ = id => document.getElementById(id);
@@ -13,7 +14,8 @@ const dom = {
   settingsRepeat: $('setting-repeat'), localVolume: $('local-volume'),
   seek: $('seek'), position: $('position'), duration: $('duration'), syncText: $('sync-text'),
   queue: $('queue-list'), queueCount: $('queue-count'), chat: $('messages'), chatForm: $('chat-form'), chatText: $('chat-text'),
-  leave: $('leave-btn'), toast: $('toast'), spotifyCard: $('spotify-card'), spotifyLink: $('spotify-open'), spotifyConnect: $('spotify-connect'), spotifyStatus: $('spotify-status'), providerLabel: $('provider-label')
+  leave: $('leave-btn'), toast: $('toast'), spotifyCard: $('spotify-card'), spotifyLink: $('spotify-open'), spotifyConnect: $('spotify-connect'), spotifyStatus: $('spotify-status'), providerLabel: $('provider-label'),
+  audiusCard: $('audius-card'), audiusAudio: $('audius-audio')
 };
 let mode = 'create', credentials = null, state = null, events = null;
 let player = null, playerReady = false, youtubeReady = false, playerVideo = null;
@@ -22,6 +24,14 @@ let serverOffset = 0, updateInterval = null, presenceInterval = null, clockInter
 let isDragging = false, toastTimeout = null, applying = false;
 const YT_PLAYING = 1, YT_PAUSED = 2, YT_ENDED = 0;
 const spotify = new SpotifyController(message => showToast(message));
+const audiusPlayer = new AudiusRoomPlayer(dom.audiusAudio, {
+  onEnd: async id => {
+    if (state?.playback?.provider !== 'audius' || state.playback.trackId !== id || !isHost() || !state.playback.playing) return;
+    await act('next', { automatic: true, expectedRevision: state.playback.revision });
+  },
+  onBlocked: () => { userEnabledPlayback = false; dom.start.hidden = false; showToast('Tap to start Audius playback on this phone.'); },
+  onError: message => showToast(message)
+});
 
 function showToast(message) {
   dom.toast.textContent = message;
@@ -145,13 +155,21 @@ function receiveState(next) {
   dom.toggle.textContent = state.playback.playing ? 'Ⅱ' : '▶';
   dom.toggle.setAttribute('aria-label', state.playback.playing ? 'Pause for everyone' : 'Play for everyone');
   const isSpotify = state.playback.provider === 'spotify';
-  dom.providerLabel.textContent = isSpotify ? 'Spotify' : 'YouTube';
+  const isAudius = state.playback.provider === 'audius';
+  dom.providerLabel.textContent = isSpotify ? 'Spotify' : isAudius ? 'Audius' : 'YouTube';
   dom.spotifyCard.hidden = !isSpotify;
-  const ytNode = $('youtube-player'); if (ytNode) ytNode.hidden = isSpotify;
+  dom.audiusCard.hidden = !isAudius;
+  const ytNode = $('youtube-player'); if (ytNode) ytNode.hidden = isSpotify || isAudius;
+  if (!isAudius && audiusPlayer.trackId) audiusPlayer.reset();
+  if (isAudius && playerReady) { try { player.pauseVideo(); } catch {} }
   dom.spotifyLink.href = isSpotify && state.playback.trackId ? `https://open.spotify.com/track/${state.playback.trackId}` : 'https://open.spotify.com/';
   dom.spotifyConnect.textContent = spotify.connected ? 'Disconnect Spotify' : 'Connect Spotify';
   dom.spotifyStatus.textContent = spotify.connected ? 'Spotify connected — each listener needs Spotify Premium and an active device.' : spotify.clientId ? 'Connect your own Spotify Premium account to play Spotify tracks.' : 'Spotify requires a developer client ID configured on the server.';
-  if (isSpotify) { dom.placeholder.hidden = true; dom.start.hidden = true; if (playerReady) { try { player.pauseVideo(); } catch {} } }
+  if (isSpotify || isAudius) {
+    dom.placeholder.hidden = true;
+    dom.start.hidden = isSpotify || userEnabledPlayback;
+    if (isSpotify && playerReady) { try { player.pauseVideo(); } catch {} }
+  }
   const connected = state.participants.filter(p => p.online).length;
   dom.count.textContent = connected;
   dom.participants.replaceChildren();
@@ -182,7 +200,7 @@ function renderQueue() {
     const row = document.createElement('div'); row.className = 'queue-track';
     const art = textNode('span', '♫', 'queue-art');
     const copy = document.createElement('div'); copy.className = 'queue-copy';
-    copy.append(textNode('strong', track.title), textNode('span', `${track.provider === 'spotify' ? 'Spotify' : 'YouTube'} · added by ${track.addedBy}`));
+    copy.append(textNode('strong', track.title), textNode('span', `${track.provider === 'spotify' ? 'Spotify' : track.provider === 'audius' ? 'Audius' : 'YouTube'} · added by ${track.addedBy}`));
     row.append(art, copy);
     if (isHost()) {
       const play = textNode('button', '▶'); play.type = 'button'; play.setAttribute('aria-label', `Play ${track.title}`);
@@ -208,13 +226,16 @@ function updateTimeline() {
   if (!state) return;
   const pos = estimatedPosition();
   let duration = 0;
-  try { if (state.playback.provider !== 'spotify' && playerReady) duration = Number(player.getDuration()) || 0; } catch { /* Not yet ready. */ }
+  try {
+    if (state.playback.provider === 'audius') duration = Number.isFinite(dom.audiusAudio.duration) ? dom.audiusAudio.duration : 0;
+    else if (state.playback.provider !== 'spotify' && playerReady) duration = Number(player.getDuration()) || 0;
+  } catch { /* Not yet ready. */ }
   dom.position.textContent = timeLabel(pos);
   dom.duration.textContent = timeLabel(duration);
   if (!isDragging) { dom.seek.max = String(Math.max(duration || 1, pos, 1)); dom.seek.value = String(Math.min(pos, Number(dom.seek.max))); }
   if (!hasTrack()) dom.syncText.textContent = 'Waiting for a song';
   else if (state.playback.provider === 'spotify') dom.syncText.textContent = spotify.connected ? 'Spotify · syncing your own player' : 'Connect Spotify to listen';
-  else if (!userEnabledPlayback) dom.syncText.textContent = 'Tap play on the video to enable audio';
+  else if (!userEnabledPlayback) dom.syncText.textContent = state.playback.provider === 'audius' ? 'Tap to enable Audius audio on this phone' : 'Tap play on the video to enable audio';
   else if (state.playback.playing) dom.syncText.textContent = 'Following the room timeline';
   else dom.syncText.textContent = 'Paused for everyone';
 }
@@ -248,6 +269,10 @@ function createPlayer(videoId) {
   });
 }
 function syncPlayer(force) {
+  if (state?.playback.provider === 'audius') {
+    audiusPlayer.sync(state.playback, estimatedPosition(), { force, canPlay: userEnabledPlayback });
+    return;
+  }
   if (state?.playback.provider === 'spotify') { spotify.syncPlayback(state.playback, estimatedPosition(), force); return; }
   if (!state?.playback.videoId || !youtubeReady) return;
   if (!player) return createPlayer(state.playback.videoId);
@@ -280,7 +305,7 @@ function syncPlayer(force) {
   } catch (error) { console.debug('Sync pending', error); }
 }
 async function onYouTubeState(event) {
-  if (!state || !isHost() || state.playback.provider === 'spotify') return;
+  if (!state || !isHost() || state.playback.provider !== 'youtube') return;
   if (event.data === YT_ENDED) {
     if (Date.now() < suppressPlayerEventsUntil) return;
     // The room revision stops stale player events from double-skipping tracks.
@@ -309,6 +334,7 @@ async function leaveRoom() {
   clearInterval(updateInterval); clearInterval(presenceInterval); clearInterval(clockInterval);
   if (credentials) sessionStorage.removeItem(`shatsu.${credentials.code}`);
   if (player) { try { player.destroy(); } catch {} }
+  audiusPlayer.reset();
   credentials = null; state = null; player = null; playerReady = false; playerVideo = null; userEnabledPlayback = false;
   const node = document.getElementById('youtube-player'); if (!node) { const div = document.createElement('div'); div.id = 'youtube-player'; $('video-area').append(div); }
   dom.room.hidden = true; dom.lobby.hidden = false;
@@ -367,7 +393,10 @@ dom.toggle.addEventListener('click', async () => {
   if (!isHost() || !hasTrack()) return;
   userEnabledPlayback = true;
   dom.start.hidden = true;
-  if (playerReady && state.playback.provider !== 'spotify') {
+  if (state.playback.provider === 'audius') {
+    if (state.playback.playing) audiusPlayer.pause();
+    else audiusPlayer.playByGesture().catch(() => { dom.start.hidden = false; });
+  } else if (playerReady && state.playback.provider === 'youtube') {
     try { suppressPlayerEventsUntil = Date.now() + 1800; if (state.playback.playing) player.pauseVideo(); else player.playVideo(); } catch {}
   }
   await act(state.playback.playing ? 'pause' : 'play');
@@ -383,26 +412,38 @@ dom.localVolume.addEventListener('input', () => {
   const volume = Number(dom.localVolume.value);
   try { localStorage.setItem('shatsu.volume', String(volume)); } catch {}
   if (playerReady) { try { player.setVolume(volume); } catch {} }
+  audiusPlayer.setVolume(volume);
 });
 dom.sync.addEventListener('click', () => {
   if (!hasTrack()) return showToast('Add a song first.');
   userEnabledPlayback = true;
   dom.start.hidden = true;
-  if (playerReady && state.playback.provider !== 'spotify') {
+  if (state.playback.provider === 'audius') {
+    audiusPlayer.sync(state.playback, estimatedPosition(), { force: true, canPlay: true });
+  } else if (playerReady && state.playback.provider === 'youtube') {
     try { suppressPlayerEventsUntil = Date.now() + 1300; player.seekTo(estimatedPosition(), true); if (state.playback.playing) player.playVideo(); } catch {}
   }
   syncPlayer(true); showToast(state.playback.provider === 'spotify' ? 'Refreshing Spotify sync…' : 'Caught up with the room.');
 });
 dom.start.addEventListener('click', () => {
-  if (!state?.playback.videoId) return;
+  if (!hasTrack()) return;
   userEnabledPlayback = true; dom.start.hidden = true;
-  if (playerReady) { try { suppressPlayerEventsUntil = Date.now() + 1700; player.seekTo(estimatedPosition(), true); if (state.playback.playing) player.playVideo(); } catch {} }
+  if (state.playback.provider === 'audius') {
+    audiusPlayer.sync(state.playback, estimatedPosition(), { force: true, canPlay: true });
+  } else if (state.playback.provider === 'youtube' && playerReady) {
+    try { suppressPlayerEventsUntil = Date.now() + 1700; player.seekTo(estimatedPosition(), true); if (state.playback.playing) player.playVideo(); } catch {}
+  }
   showToast('Player enabled on this device.');
 });
 dom.seek.addEventListener('pointerdown', () => { isDragging = true; });
 dom.seek.addEventListener('input', () => { isDragging = true; dom.position.textContent = timeLabel(Number(dom.seek.value)); });
 dom.seek.addEventListener('change', async () => {
-  if (isHost()) await act('seek', { position: Number(dom.seek.value) });
+  if (isHost()) {
+    if (state.playback.provider === 'audius' && Number.isFinite(dom.audiusAudio.duration)) {
+      try { dom.audiusAudio.currentTime = Number(dom.seek.value); } catch {}
+    }
+    await act('seek', { position: Number(dom.seek.value) });
+  }
   isDragging = false;
 });
 dom.chatForm.addEventListener('submit', async event => {
@@ -433,6 +474,10 @@ if (inviteCode && /^[A-Z2-9]{8}$/i.test(inviteCode)) {
     } catch { sessionStorage.removeItem(`shatsu.${inviteCode.toUpperCase()}`); }
   }
 }
+});
+audiusPlayer.setVolume(Number(dom.localVolume.value));
+dom.audiusAudio.addEventListener('loadedmetadata', () => {
+  if (state?.playback.provider === 'audius') { syncPlayer(true); updateTimeline(); }
 });
 initDiscovery({
   api, spotify, isHost, act, showToast,
