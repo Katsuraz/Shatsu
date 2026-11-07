@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: shatsu
+    runtime: node
+    region: singapore
+    plan: free
+    buildCommand: npm run check && npm test
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: '22'
+      - key: SHATSU_SPOTIFY_CLIENT_ID
+        sync: false
