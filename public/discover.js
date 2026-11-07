@@ -1,5 +1,5 @@
 import { detectSongLink, looksLikeLink } from './song-input.js';
-// In-app music discovery. Search data comes only from official YouTube/Spotify APIs.
+// In-app music discovery using official Audius, YouTube and Spotify APIs.
 // All track selections still flow through the host-authoritative Shatsu room.
 const $ = id => document.getElementById(id);
 const HISTORY_KEY = 'shatsu.recentTracks.v1';
@@ -12,7 +12,7 @@ function node(tag, text, className) {
 function loadRecent() {
   try {
     const data = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
-    return Array.isArray(data) ? data.filter(t => t && ['youtube', 'spotify'].includes(t.provider) && typeof t.title === 'string').slice(0, 15) : [];
+    return Array.isArray(data) ? data.filter(t => t && ['youtube', 'spotify', 'audius'].includes(t.provider) && typeof t.title === 'string').slice(0, 15) : [];
   } catch { return []; }
 }
 function saveRecent(track) {
@@ -50,7 +50,7 @@ export function initDiscovery({ api, spotify, isHost, act, showToast, armPlaybac
         row.append(art);
       } else row.append(node('div', '♫', 'discover-art-fallback'));
       const info = node('div', undefined, 'discover-info');
-      info.append(node('strong', track.title), node('span', [track.artist || 'Music', track.provider === 'spotify' ? 'Spotify' : 'YouTube'].join(' · ')));
+      info.append(node('strong', track.title), node('span', [track.artist || 'Music', track.provider === 'spotify' ? 'Spotify' : track.provider === 'audius' ? 'Audius' : 'YouTube'].join(' · ')));
       row.append(info);
       const btn = node('button', isHost() ? 'Play' : '+ Queue', 'discover-pick');
       btn.type = 'button';
@@ -58,7 +58,7 @@ export function initDiscovery({ api, spotify, isHost, act, showToast, armPlaybac
       btn.addEventListener('click', async () => {
         btn.disabled = true;
         const selected = { provider: track.provider, title: track.title,
-          ...(track.provider === 'spotify' ? { trackId: track.trackId } : { videoId: track.videoId }) };
+          ...(track.provider === 'youtube' ? { videoId: track.videoId } : { trackId: track.trackId }) };
         if (isHost()) armPlayback();
         const action = isHost() ? 'setTrack' : 'enqueue';
         const saved = await act(action, selected);
@@ -81,13 +81,20 @@ export function initDiscovery({ api, spotify, isHost, act, showToast, armPlaybac
     results.replaceChildren();
     const panel = node('div', undefined, 'discover-fallback');
     panel.append(
-      node('strong', 'Search by song name is not available yet.'),
-      node('p', 'Paste a YouTube video link above to play immediately, or find a song on YouTube and share its link.')
+      node('strong', 'YouTube search needs Google API access.'),
+      node('p', 'Choose Audius (free, no account) above to search songs inside Shatsu now. You can also paste a YouTube video link directly.')
     );
     const open = node('a', 'Find song on YouTube ↗', 'discover-find-external');
     open.href = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q);
     open.rel = 'noopener noreferrer';
     panel.append(open);
+    const useAudius = node('button', 'Search Audius instead ♫', 'discover-find-external');
+    useAudius.type = 'button';
+    useAudius.addEventListener('click', () => {
+      providerSelect.value = 'audius';
+      form.requestSubmit();
+    });
+    panel.prepend(useAudius);
     results.append(panel);
     help.textContent = 'Song links do not need a YouTube Data API key.';
   }
@@ -134,13 +141,15 @@ export function initDiscovery({ api, spotify, isHost, act, showToast, armPlaybac
         if (!spotify.connected) throw new Error('Connect your Spotify account first, then search again.');
         tracks = await spotify.searchTracks(q);
       } else {
-        const data = await api('/api/search?q=' + encodeURIComponent(q) + '&provider=youtube');
+        const data = await api('/api/search?q=' + encodeURIComponent(q) + '&provider=' + encodeURIComponent(provider));
         tracks = data.tracks;
       }
       render(Array.isArray(tracks) ? tracks : []);
       help.textContent = provider === 'spotify'
         ? 'Spotify tracks require an eligible Premium player for playback.'
-        : 'YouTube videos play through the official visible video player.';
+        : provider === 'audius'
+          ? 'Audius streams independently released tracks without an account or Premium. Mainstream songs may be missing.'
+          : 'YouTube videos play through the official visible video player.';
     } catch (error) {
       if (provider === 'youtube' && /not configured|quota|API access/i.test(error.message || '')) {
         searchFallback(q);
@@ -154,7 +163,9 @@ export function initDiscovery({ api, spotify, isHost, act, showToast, armPlaybac
     query.value = '';
     help.textContent = providerSelect.value === 'spotify'
       ? 'Connect Spotify below to search its catalog.'
-      : 'Search YouTube by song or artist. The server owner must enable YouTube Data API search.';
+      : providerSelect.value === 'audius'
+        ? 'Search independent music for free. No sign-in, API key or Premium required.'
+        : 'YouTube catalog search needs a Google API key; pasting a video link works for free.';
     showRecent();
   });
   query.addEventListener('input', () => {
@@ -190,4 +201,5 @@ export function initDiscovery({ api, spotify, isHost, act, showToast, armPlaybac
     if (lastResults.length) render(lastResults, lastMode);
   });
   showRecent();
+  help.textContent = 'Search independent Audius tracks for free (no account needed). YouTube links still work.';
 }
