@@ -22,7 +22,7 @@ test('room creation, joining, host authority, queue, chat, playback timestamps',
   assert.throws(() => store.action(host.code, guest.token, { type: 'play' }), e => e.status === 403);
   assert.throws(() => store.action(host.code, guest.token, { type: 'setTrack', videoId: example }), e => e.status === 403);
   store.action(host.code, host.token, { type: 'setTrack', videoId: `https://youtu.be/${example}`, title: 'Song' });
-  assert.equal(store.get(host.code).playback.playing, false);
+  assert.equal(store.get(host.code).playback.playing, true); // Auto Play is on by default.
   store.action(host.code, host.token, { type: 'play' });
   clock += 5000;
   store.action(host.code, host.token, { type: 'pause' });
