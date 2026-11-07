@@ -41,6 +41,17 @@ If your favorite song isn't on Audius, choose **YouTube · Links** and paste its
 
 The optional Spotify source still uses the Spotify Web API, requires developer configuration and eligible playback accounts.
 
+### 4B. Keep listening with the screen locked (Android APK v0.4)
+
+1. Install Shatsu v0.4 or newer from GitHub Releases and open your listening room.
+2. Choose **Audius · Free** and start a track in your room.
+3. In the Audius player, tap **🎧 Play in background** and approve the one-time Android prompt.
+4. Shatsu hands audio to its native Android service. You can now lock your screen, use other apps, or swipe away the Shatsu screen. The music notification shows **Play/Pause**, **Stop**, and **Next** for the room host.
+5. The native audio service checks the room's timeline every few seconds and, as the host, can advance the queue when an Audius track finishes. If the phone's battery manager kills the process, playback may stop; reopen Shatsu to restart it.
+6. To end background listening, tap **■ Stop background audio** in Shatsu or **Stop** in the media notification.
+
+This background feature is currently **Audius-only** in the Android APK, not the Brave web app. A Spotify Premium account may play in the *official Spotify app* in the background, but Shatsu's Spotify controls still need authorized setup and testing. **YouTube and YouTube Music video embeds cannot continue playing after Shatsu is minimized** under YouTube's official API rules. Force-stopping Shatsu in Android Settings also stops its native service.
+
 ### Room controls
 
 | Control | What it does |
@@ -94,7 +105,7 @@ signing is planned before a stable release.
 | "Shatsu is waking up" | The free server may be sleeping. Keep the app open, then tap **Try again**. |
 | YouTube search says not configured | Switch the service dropdown to **Audius · Free** for song-name search without any API key, or paste a YouTube video link. |\n| Blank page or YouTube video won't play | Use **Brave ↗**, check internet access, tap play on the video and try another embeddable link. |
 | Friend cannot join | Make sure both use the **same active room link/code**. Room state can disappear when the free server restarts. |
-| Audius search or audio fails | Check connectivity. Audius's public API or a particular artist's stream may be unavailable; try another track or a YouTube link. |\n| Music is behind | Tap **↻** on the slower phone. Precise, sample-perfect synchronization is not guaranteed. |
+| Background audio stops when screen locks | Use the **Android APK**, not just the Brave website. Enable the Audius background switch before locking the screen. Battery restrictions or force stop may still terminate playback. |\n| Audius search or audio fails | Check connectivity. Audius's public API or a particular artist's stream may be unavailable; try another track or a YouTube link. |\n| Music is behind | Tap **↻** on the slower phone. Precise, sample-perfect synchronization is not guaranteed. |
 | Spotify button won't connect | Open the room in **Brave**, not the Android WebView; a developer client ID, account eligibility and an active device are required. |
 | APK won't update | Download from **GitHub Releases** and, if necessary, remove the older debug app before installing. |
 
